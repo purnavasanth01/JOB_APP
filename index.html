@@ -14,20 +14,21 @@
     --accent: #1d4ed8; --accent-soft: #dbeafe; --fire: #ea580c; --fire-soft: #ffedd5;
     --ok: #15803d; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7;
     --chip: #f1f5f9; --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 8px rgba(15, 23, 42, .04);
+    --apply: #1d4ed8;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #0b1220; --card: #121b2f; --text: #e2e8f0; --muted: #94a3b8; --line: #1f2a40;
       --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
       --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
-      --chip: #1a2540; --shadow: none;
+      --chip: #1a2540; --shadow: none; --apply: #2563eb;
     }
   }
   :root[data-theme="dark"] {
     --bg: #0b1220; --card: #121b2f; --text: #e2e8f0; --muted: #94a3b8; --line: #1f2a40;
     --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
     --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
-    --chip: #1a2540; --shadow: none;
+    --chip: #1a2540; --shadow: none; --apply: #2563eb;
   }
   * { box-sizing: border-box; }
   body {
@@ -62,27 +63,28 @@
   }
   main { padding: 12px 16px 16px; max-width: 720px; margin: 0 auto; display: grid; gap: 10px; }
   .job {
-    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px;
     box-shadow: var(--shadow); transition: opacity .25s, transform .25s;
   }
   .job.h1b { border-left: 4px solid var(--fire); }
   .job.gone { opacity: 0; transform: translateX(40px); }
-  .row1 { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
-  .company { font-weight: 700; color: var(--text); letter-spacing: .2px; }
-  .rank { font-weight: 700; color: var(--fire); background: var(--fire-soft); border-radius: 6px; padding: 0 6px; }
-  .ago { margin-left: auto; white-space: nowrap; }
-  .title { font-weight: 600; font-size: 16px; margin: 4px 0 2px; }
-  .meta { color: var(--muted); font-size: 13px; }
-  .quote { margin-top: 6px; font-size: 13px; font-style: italic; color: var(--muted); }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+  .row1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .company { font-weight: 800; font-size: 17px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rank { flex: none; font-size: 12px; font-weight: 700; color: var(--fire); background: var(--fire-soft); border-radius: 6px; padding: 0 6px; }
+  .role { flex: none; font-size: 11px; font-weight: 600; padding: 0 7px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+  .ago { margin-left: auto; flex: none; white-space: nowrap; font-size: 12px; color: var(--muted); }
+  .title { font-size: 14px; margin: 2px 0 1px; }
+  .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .quote { margin-top: 3px; font-size: 12px; font-style: italic; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+  .chip { font-size: 11px; padding: 1px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); }
   .chip.warn { background: var(--warn-soft); color: var(--warn); }
-  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .actions { display: flex; gap: 6px; margin-top: 7px; }
   .btn {
-    border: 0; border-radius: 10px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer;
+    border: 0; border-radius: 9px; padding: 5px 11px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
     background: var(--chip); color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
   }
-  .btn.apply { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
+  .btn.apply { background: var(--apply); color: #fff; flex: 1; justify-content: center; }
   .btn.star[aria-pressed="true"] { background: var(--warn-soft); color: var(--warn); }
   .btn.done { background: var(--ok-soft); color: var(--ok); }
   .empty {
@@ -115,7 +117,7 @@
 <div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 
 <script>
-  const VERSION = "v3 · UI preview with fake jobs · 2026-11-11";
+  const VERSION = "v4 · compact cards · 2026-11-11";
   const TABS = [
     { name: "H1B_LIST", match: (j) => j.rank != null },
     { name: "Workday", match: (j) => j.source === "workday" },
@@ -171,16 +173,17 @@
           (h1b ? "<span>🔥</span>" : "") +
           '<span class="company">' + esc(h1b ? j.company.toUpperCase() : j.company) + "</span>" +
           (h1b ? '<span class="rank">#' + esc(j.rank) + "</span>" : "") +
-          '<span class="ago">' + ago(j.posted_min) + "</span>" +
+          '<span class="role">' + esc(j.role) + "</span>" +
+          '<span class="ago">' + ago(j.posted_min) + " ago</span>" +
         "</div>" +
         '<div class="title">' + esc(j.title) + "</div>" +
         '<div class="meta">📍 ' + esc(j.location) + " · 📡 " + esc(j.listener) + "</div>" +
         (j.line ? '<div class="quote">💬 "' + esc(j.line) + '"</div>' : "") +
-        '<div class="chips"><span class="chip">' + esc(j.role) + "</span>" + tags + "</div>" +
+        (tags ? '<div class="chips">' + tags + "</div>" : "") +
         '<div class="actions">' +
           '<a class="btn apply" href="' + esc(j.url) + '" target="_blank" rel="noopener">Apply ↗</a>' +
           '<button class="btn star" data-act="star" aria-pressed="' + starred + '" aria-label="Star">' + (starred ? "⭐" : "☆") + "</button>" +
-          '<button class="btn done" data-act="done" aria-label="Done">✓ Done</button>' +
+          '<button class="btn done" data-act="done" aria-label="Applied">✓ Applied</button>' +
           '<button class="btn" data-act="skip" aria-label="Skip">✕</button>' +
         "</div>" +
       "</article>"
@@ -222,7 +225,7 @@
     lastAction = id;
     el.classList.add("gone");
     setTimeout(render, 250);
-    showToast((act === "done" ? "✓ Done: " : "✕ Skipped: ") + job.company);
+    showToast((act === "done" ? "✓ Applied: " : "✕ Skipped: ") + job.company);
   });
 
   $("undo").onclick = () => {
