@@ -145,7 +145,7 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v10 · Jobright tab second · 2026-11-11";
+  const VERSION = "v11 · hide 'without sponsorship' jobs · 2026-11-11";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
@@ -177,6 +177,8 @@
     "sponsor\\w*\\s+(is|are|will be)\\s+not\\s+(available|offered|provided|possible)",
     "\\bno\\s+(visa\\s+|immigration\\s+|employment\\s+)?sponsorship\\b(?!\\s+(is\\s+)?(required|needed))",
     "does not offer sponsorship",
+    "(?<!with or )\\bwithout\\s+(the\\s+)?(need\\s+(for|of)\\s+|requiring\\s+|needing\\s+|requirement\\s+(for|of)\\s+)?(any\\s+|current\\s+or\\s+future\\s+|future\\s+)?(visa\\s+|employment\\s+|employer\\s+|company\\s+|immigration\\s+|work\\s+)?sponsorship",
+    "\\b(not|never)\\s+(require|need)\\w*\\s+(\\w+\\s+){0,3}sponsorship",
     "citizenship or permanent work authori[sz]ation is required",
   ].join("|"), "i");
   const TRACK_RECORD = /track record of offering h-?1-?b/i;
