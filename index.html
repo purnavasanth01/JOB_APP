@@ -133,6 +133,8 @@
     <div class="headbtns">
       <span class="sub" id="sub">loading…</span>
       <button class="iconbtn" id="blBtn" aria-label="Blacklisted companies">🚫 0</button>
+      <button class="iconbtn" id="syncBtn" aria-label="Sync status">☁️</button>
+      <button class="iconbtn" id="setBtn" aria-label="Settings">⚙️</button>
     </div>
   </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -143,7 +145,7 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v8 · posted time + blacklist · 2026-11-11";
+  const VERSION = "v9 · sync + notifications · 2026-11-11";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
@@ -191,9 +193,26 @@
     .split(/\s+/).filter((w) => w && !COMPANY_STOP.has(w)).join("");
 
   let jobs = [];
-  let status = load("status", {});   // job id -> "done" | "skipped"
-  let stars = load("stars", {});     // job id -> true/false (missing = company autostar)
-  let blacklist = load("blacklist", []);  // [{ key: normalized company, name, at }]
+  // Synced state (same shape as sync/state.json on the "data" branch). Every entry has t = last change (ms);
+  // when two devices disagree, the newer t wins, entry by entry.
+  //   items:     job id -> { s: "done" | "skipped" | "", star: true | false | null (null = company autostar), t }
+  //   blacklist: company key -> { name, on, t }
+  //   subs:      device id -> { sub (push subscription), on, name, t }
+  let S = load("appstate", null);
+  if (!S || !S.items) {                       // first run of v9: move the old per-device data into S
+    const now = Date.now();
+    S = { v: 1, items: {}, blacklist: {}, subs: {} };
+    for (const [id, s] of Object.entries(load("status", {}))) S.items[id] = { s, star: null, t: now };
+    for (const [id, st] of Object.entries(load("stars", {}))) S.items[id] = { ...(S.items[id] || { s: "" }), star: st, t: now };
+    for (const b of load("blacklist", [])) S.blacklist[b.key] = { name: b.name, on: true, t: b.at || now };
+    save("appstate", S);
+  }
+  const itemOf = (id) => S.items[id] || { s: "", star: null, t: 0 };
+  function setItem(id, patch) {
+    S.items[id] = { ...itemOf(id), ...patch, t: Date.now() };
+    changed();
+  }
+  const blacklistOn = () => Object.entries(S.blacklist).filter(([, b]) => b.on);
   let current = load("tab", "H1B_LIST");
   if (!TABS.some((t) => t.name === current)) current = TABS[0].name;
   let shown = PAGE, lastAction = null, toastTimer = null, updatedAt = null;
@@ -309,9 +328,9 @@
   }
 
   // ---------- screen ----------
-  const isBlacklisted = (j) => blacklist.some((b) => b.key === normCompany(j.company));
-  const isOpen = (j) => !status[j.id] && !isBlacklisted(j);
-  const isStarred = (j) => (j.id in stars ? stars[j.id] : j.autostar);
+  const isBlacklisted = (j) => { const b = S.blacklist[normCompany(j.company)]; return !!(b && b.on); };
+  const isOpen = (j) => !itemOf(j.id).s && !isBlacklisted(j);
+  const isStarred = (j) => { const st = itemOf(j.id).star; return st == null ? j.autostar : st; };
   function ago(t) {
     const min = Math.max(0, Math.round((Date.now() - t) / 60000));
     if (min < 60) return min + "m";
@@ -345,7 +364,7 @@
       $("tabs").appendChild(b);
     }
     $("sub").textContent = updatedAt ? "updated " + hhmm(updatedAt) : "";
-    $("blBtn").textContent = "🚫 " + blacklist.length;
+    $("blBtn").textContent = "🚫 " + blacklistOn().length;
   }
 
   function card(j) {
@@ -410,14 +429,12 @@
     const id = el.dataset.id;
     const job = jobs.find((j) => j.id === id);
     if (btn.dataset.act === "star") {
-      stars[id] = !isStarred(job);
-      save("stars", stars);
+      setItem(id, { star: !isStarred(job) });
       renderList();
       return;
     }
     const act = btn.dataset.act;
-    status[id] = act === "done" ? "done" : "skipped";
-    save("status", status);
+    setItem(id, { s: act === "done" ? "done" : "skipped" });
     lastAction = id;
     el.classList.add("gone");
     setTimeout(render, 250);
@@ -425,7 +442,7 @@
   });
 
   $("undo").onclick = () => {
-    if (lastAction) { delete status[lastAction]; save("status", status); lastAction = null; render(); }
+    if (lastAction) { setItem(lastAction, { s: "" }); lastAction = null; render(); }
     $("toast").classList.remove("show");
   };
 
@@ -451,7 +468,7 @@
     const name = esc(job.company);
     openSheet(
       "<h2>Blacklist " + name + "?</h2>" +
-      "<p>Every " + name + " job will be hidden from all tabs on this device.</p>" +
+      "<p>Every " + name + " job will be hidden from all tabs on all your devices, and Telegram + notifications stop sending them.</p>" +
       '<div class="row"><button class="btn" id="c1-no">Cancel</button>' +
       '<button class="btn danger" id="c1-yes">Yes, blacklist</button></div>');
     $("c1-no").onclick = closeSheet;
@@ -476,9 +493,8 @@
       else { clearInterval(tick); b.textContent = "Yes, I'm sure"; b.disabled = false; }
     }, 1000);
     $("c2-yes").onclick = () => {
-      const key = normCompany(job.company);
-      if (!blacklist.some((b) => b.key === key)) blacklist.push({ key, name: job.company, at: Date.now() });
-      save("blacklist", blacklist);
+      S.blacklist[normCompany(job.company)] = { name: job.company, on: true, t: Date.now() };
+      changed();
       closeSheet();
       render();
       lastAction = null;
@@ -487,20 +503,21 @@
   }
 
   $("blBtn").onclick = () => {
-    const rows = blacklist.length
-      ? blacklist.map((b, i) => '<div class="blrow"><span>' + esc(b.name) + '</span><button class="btn" data-unbl="' + i + '">Unblock</button></div>').join("")
+    const list = blacklistOn();
+    const rows = list.length
+      ? list.map(([key, b]) => '<div class="blrow"><span>' + esc(b.name) + '</span><button class="btn" data-unbl="' + esc(key) + '">Unblock</button></div>').join("")
       : "<p>No blacklisted companies.</p>";
-    openSheet('<h2>🚫 Blacklisted companies</h2><p>Hidden from all tabs on this device.</p>' + rows +
+    openSheet('<h2>🚫 Blacklisted companies</h2><p>Hidden on all your devices; Telegram and notifications skip them too.</p>' + rows +
       '<div class="stack" style="margin-top:12px"><button class="btn" id="bl-close">Close</button></div>');
     $("bl-close").onclick = closeSheet;
     $("sheet").querySelectorAll("[data-unbl]").forEach((b) => (b.onclick = () => {
-      const item = blacklist[+b.dataset.unbl];
+      const key = b.dataset.unbl, item = S.blacklist[key];
       openSheet("<h2>Unblock " + esc(item.name) + "?</h2><p>Its jobs will show again.</p>" +
         '<div class="row"><button class="btn" id="u-no">Cancel</button><button class="btn done" id="u-yes">Unblock</button></div>');
       $("u-no").onclick = closeSheet;
       $("u-yes").onclick = () => {
-        blacklist = blacklist.filter((x) => x.key !== item.key);
-        save("blacklist", blacklist);
+        S.blacklist[key] = { ...item, on: false, t: Date.now() };
+        changed();
         closeSheet();
         render();
       };
@@ -533,6 +550,196 @@
     const job = jobs.find((j) => j.id === el.dataset.id);
     if (job && !$("overlay").classList.contains("show")) jobMenu(job);
   });
+
+  // ---------- sync: sync/state.json on the "data" branch of this repo ----------
+  // Each device saves through the GitHub API with its own token (Settings ⚙️). Without a token the app still
+  // READS the shared state (public file), but cannot save.
+  const REPO = "purnavasanth01/JOB_APP", BRANCH = "data", PATH = "sync/state.json";
+  const API = "https://api.github.com/repos/" + REPO;
+  const SAVE_DELAY_MS = 5000, SYNC_MS = 30000;
+  let token = load("gh_token", "");
+  let remoteSha = null, saveTimer = null, syncing = false, syncState = "idle", syncNote = "";
+  let deviceId = load("device_id", "");
+  if (!deviceId) { deviceId = Math.random().toString(36).slice(2, 10); save("device_id", deviceId); }
+
+  const b64enc = (s) => { let bin = ""; new TextEncoder().encode(s).forEach((x) => (bin += String.fromCharCode(x))); return btoa(bin); };
+  const b64dec = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
+
+  function changed() {                       // called after every local change
+    S.dirty = true;
+    save("appstate", S);
+    setSync("saving");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(syncNow, SAVE_DELAY_MS);  // several taps in 5 s -> one save (one commit)
+  }
+
+  function setSync(st, note) {
+    syncState = st; syncNote = note || "";
+    const icon = { idle: "☁️", ok: "☁️", saving: "⏳", error: "⚠️", readonly: "🔒" }[st] || "☁️";
+    $("syncBtn").textContent = icon;
+    $("syncBtn").title = note || st;
+  }
+
+  function mergeSection(a, b) {              // newer t wins, key by key
+    const out = { ...(a || {}) };
+    for (const [k, v] of Object.entries(b || {})) if (!out[k] || (v && v.t > out[k].t)) out[k] = v;
+    return out;
+  }
+  const merge = (a, b) => ({ v: 1, items: mergeSection(a.items, b.items), blacklist: mergeSection(a.blacklist, b.blacklist),
+    subs: mergeSection(a.subs, b.subs) });
+  // key order must not matter, or the app would save to GitHub every 30 s for nothing
+  const canon = (x) => Array.isArray(x) ? "[" + x.map(canon).join(",") + "]"
+    : x && typeof x === "object" ? "{" + Object.keys(x).sort().map((k) => JSON.stringify(k) + ":" + canon(x[k])).join(",") + "}"
+    : JSON.stringify(x);
+  const same = (a, b) => canon(merge(a, {})) === canon(merge(b, {}));
+
+  async function gh(method, path, body) {
+    const r = await fetch(API + path, {
+      method, cache: "no-store",
+      headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!r.ok && r.status !== 404) throw new Error("GitHub " + r.status + (r.status === 401 ? " (token wrong or expired)" : r.status === 403 ? " (token has no write access)" : ""));
+    return r.status === 404 ? null : r.json();
+  }
+
+  async function readRemote() {
+    if (token) {
+      const d = await gh("GET", "/contents/" + PATH + "?ref=" + BRANCH);
+      if (!d) return { state: null, sha: null };
+      return { state: JSON.parse(b64dec(d.content)), sha: d.sha };
+    }
+    const r = await fetch("https://raw.githubusercontent.com/" + REPO + "/" + BRANCH + "/" + PATH + "?t=" + Date.now(), { cache: "no-store" });
+    return { state: r.ok ? await r.json() : null, sha: null };
+  }
+
+  async function ensureBranch() {
+    if (await gh("GET", "/branches/" + BRANCH)) return;
+    const main = await gh("GET", "/git/ref/heads/main");
+    await gh("POST", "/git/refs", { ref: "refs/heads/" + BRANCH, sha: main.object.sha });
+  }
+
+  async function syncNow() {
+    if (syncing) return;
+    syncing = true;
+    try {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { state: remote, sha } = await readRemote();
+        const merged = merge(S, remote || {});
+        const localChanged = !same(merged, S);
+        S = { ...merged, dirty: S.dirty };
+        if (localChanged) render();
+        if (!token) { save("appstate", S); setSync("readonly", "Read-only: add your GitHub token in ⚙️ to save"); return; }
+        if (!S.dirty && remote && same(merged, remote)) { save("appstate", S); setSync("ok", "Synced"); return; }
+        if (!remote) await ensureBranch();
+        const body = { message: "[CHORE] Sync app state from " + deviceName(), branch: BRANCH,
+          content: b64enc(JSON.stringify(merge(S, {}), null, 1)), ...(sha ? { sha } : {}) };
+        const r = await fetch(API + "/contents/" + PATH, { method: "PUT", cache: "no-store",
+          headers: { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+          body: JSON.stringify(body) });
+        if (r.status === 409 || r.status === 422) continue;          // someone else saved first: merge again
+        if (!r.ok) throw new Error("GitHub " + r.status + (r.status === 401 ? " (token wrong or expired)" : r.status === 403 ? " (token has no write access)" : ""));
+        remoteSha = (await r.json()).content.sha;
+        S.dirty = false;
+        save("appstate", S);
+        setSync("ok", "Synced");
+        return;
+      }
+      throw new Error("could not save after 3 tries");
+    } catch (e) {
+      setSync("error", "Sync problem: " + e.message);
+    } finally {
+      syncing = false;
+    }
+  }
+
+  function deviceName() {
+    const ua = navigator.userAgent;
+    return /Android/i.test(ua) ? "Android phone" : /iPhone|iPad/i.test(ua) ? "iPhone" : /Mac/i.test(ua) ? "Mac" : "device";
+  }
+
+  // ---------- notifications (Web Push) ----------
+  const VAPID_PUBLIC = "BNoqtTPlmvZTTY4lFjVklP11uzT_YOHc_vTtr_CVJhqFGcC6dq3pHuMc6sRvfXEXounY1I-XbVaO1RQYYkJJzK0";
+  const pushSupported = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+  const keyBytes = (b) => Uint8Array.from(atob((b + "===".slice((b.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+
+  async function enablePush() {
+    if (!pushSupported()) throw new Error("This browser can't receive notifications. Install the app and use Chrome.");
+    if (!token) throw new Error("Add your GitHub token first, so this device can register for notifications.");
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") throw new Error("Notifications are blocked. Allow them for this app in the phone/browser settings.");
+    const reg = await navigator.serviceWorker.ready;
+    const sub = (await reg.pushManager.getSubscription()) ||
+      (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC) }));
+    S.subs[deviceId] = { sub: sub.toJSON(), on: true, name: deviceName(), t: Date.now() };
+    changed();
+  }
+
+  async function disablePush() {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    S.subs[deviceId] = { ...(S.subs[deviceId] || {}), sub: null, on: false, t: Date.now() };
+    changed();
+  }
+
+  async function pushStatus() {
+    if (!pushSupported()) return "not supported in this browser";
+    if (Notification.permission === "denied") return "blocked in settings";
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg && (await reg.pushManager.getSubscription());
+    const mine = S.subs[deviceId];
+    return sub && mine && mine.on ? "ON for this device" : "off";
+  }
+
+  // ---------- settings sheet ----------
+  async function openSettings(msg) {
+    const ps = await pushStatus();
+    const others = Object.entries(S.subs).filter(([id, v]) => id !== deviceId && v.on).map(([, v]) => esc(v.name)).join(", ");
+    openSheet(
+      "<h2>⚙️ Settings</h2>" +
+      (msg ? '<p style="color:var(--warn)">' + esc(msg) + "</p>" : "") +
+      "<h3 style=\"margin:12px 0 4px;font-size:15px\">☁️ Sync between devices</h3>" +
+      "<p>Status: " + esc(syncNote || syncState) + "<br>This device: " + esc(deviceName()) + " · " + esc(deviceId) + "</p>" +
+      '<div class="stack">' +
+        '<input id="tok" type="password" autocomplete="off" placeholder="GitHub token (github_pat_…)" value="' + esc(token) + '" ' +
+        'style="padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit">' +
+        '<div class="row"><button class="btn" id="tok-save">Save token</button><button class="btn" id="tok-del">Remove</button></div>' +
+        '<button class="btn" id="sync-now">Sync now</button>' +
+      "</div>" +
+      "<h3 style=\"margin:16px 0 4px;font-size:15px\">🔔 Notifications</h3>" +
+      "<p>This device: " + esc(ps) + (others ? "<br>Also on: " + others : "") + "</p>" +
+      '<div class="stack">' +
+        '<button class="btn done" id="push-on">🔔 Enable notifications on this device</button>' +
+        '<button class="btn" id="push-test">Show a test notification</button>' +
+        '<button class="btn" id="push-off">Turn off on this device</button>' +
+        '<button class="btn" id="set-close">Close</button>' +
+      "</div>");
+    $("set-close").onclick = closeSheet;
+    $("tok-save").onclick = () => { token = $("tok").value.trim(); save("gh_token", token); syncNow().then(() => openSettings()); };
+    $("tok-del").onclick = () => { token = ""; save("gh_token", ""); setSync("readonly"); openSettings("Token removed from this device."); };
+    $("sync-now").onclick = () => syncNow().then(() => openSettings());
+    $("push-on").onclick = () => enablePush().then(() => openSettings("✅ Notifications are on. Saving to GitHub…"))
+      .catch((e) => openSettings(e.message));
+    $("push-off").onclick = () => disablePush().then(() => openSettings("Notifications turned off for this device."))
+      .catch((e) => openSettings(e.message));
+    $("push-test").onclick = async () => {
+      try {
+        if (Notification.permission !== "granted") throw new Error("Enable notifications first.");
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification("👑 Test · Amazon #1", { body: "SDE Intern 2027\n📍 Seattle, WA", icon: "icon-192.png", tag: "test" });
+      } catch (e) { openSettings(e.message); }
+    };
+  }
+  $("setBtn").onclick = () => openSettings();
+  $("syncBtn").onclick = () => openSettings();
+
+  if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => { if (e.data === "refresh") refresh(); });
+
+  setSync(token ? "idle" : "readonly");
+  syncNow();
+  setInterval(() => { if (!document.hidden) syncNow(); }, SYNC_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(); });
 
   refresh();
   setInterval(refresh, REFRESH_MS);
