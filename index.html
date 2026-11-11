@@ -121,7 +121,7 @@
 <div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 
 <script>
-  const VERSION = "v6 · real jobs · 2026-11-11";
+  const VERSION = "v7 · hide no-sponsorship jobs · 2026-11-11";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
@@ -145,6 +145,19 @@
     orc: "Oracle Cloud", phenom: "Phenom", eightfold: "Eightfold", smartrecruiters: "SmartRecruiters",
     ashby: "Ashby", lever: "Lever", hiringcafe: "hiring.cafe",
   };
+  // Jobs alerted before the listener's 2026-11-11 rule change can still say "no sponsorship" or
+  // "citizens only"; hide those too (same idea as the listener's rules.py).
+  const NO_SPONSOR = new RegExp([
+    "not\\s+(be\\s+)?eligible\\s+for\\s+(\\w+\\s+){0,3}sponsor",
+    "(not|unable to|cannot|can'?t|won'?t|will not|do not|does not|don'?t|doesn'?t|is not|are not|not able to)\\s+(\\w+\\s+){0,2}(offer|provide|support|sponsor|consider|accept)\\w*\\b[^.]{0,60}\\b(sponsor\\w*|visas?)\\b",
+    "sponsor\\w*\\s+(is|are|will be)\\s+not\\s+(available|offered|provided|possible)",
+    "\\bno\\s+(visa\\s+|immigration\\s+|employment\\s+)?sponsorship\\b(?!\\s+(is\\s+)?(required|needed))",
+    "does not offer sponsorship",
+    "citizenship or permanent work authori[sz]ation is required",
+  ].join("|"), "i");
+  const TRACK_RECORD = /track record of offering h-?1-?b/i;
+  const blocked = (j) => NO_SPONSOR.test(j.line) || j.tags.some((t) => /no sponsorship/i.test(t));
+
   const COMPANY_STOP = new Set(["inc", "llc", "ltd", "corp", "corporation", "co", "company", "the", "plc", "lp",
     "group", "holdings", "technologies", "technology", "usa", "us", "na", "incorporated"]);
 
@@ -209,12 +222,16 @@
       seen.add(id);
       const t = byName.get(normCompany(r.company));
       const type = (r.source || "").split(":")[0];
-      list.push({
+      const job = {
         id, company: t ? t.name : r.company, rank: t ? t.rank : null, autostar: !!(t && t.autostar),
         flag: t && t.flag ? t.flag : "", title: r.title, role: r.role || "", location: r.location,
         type, listener: SOURCE_NAMES[type] || type, url: r.url, line: r.evidence || "",
         tags: cleanTags(r.tags), found: r.found_at, time: Date.parse(r.found_at.replace(" ", "T") + ":00Z"),
-      });
+      };
+      if (blocked(job)) continue;
+      // H1B_LIST companies are known sponsors: the "track record of offering H1B" line adds nothing there
+      if (job.rank != null && TRACK_RECORD.test(job.line)) job.line = "";
+      list.push(job);
     }
     return list.sort((a, b) => b.time - a.time);
   }
