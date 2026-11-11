@@ -10,89 +10,234 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root {
-    --bg: #f5f7fb; --card: #ffffff; --text: #0f172a; --muted: #64748b;
-    --line: #e2e8f0; --accent: #1d4ed8; --accent-soft: #dbeafe;
+    --bg: #f3f5f9; --card: #ffffff; --text: #0f172a; --muted: #64748b; --line: #e2e8f0;
+    --accent: #1d4ed8; --accent-soft: #dbeafe; --fire: #ea580c; --fire-soft: #ffedd5;
+    --ok: #15803d; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7;
+    --chip: #f1f5f9; --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 8px rgba(15, 23, 42, .04);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0b1220; --card: #111a2e; --text: #e2e8f0; --muted: #94a3b8;
-      --line: #1e293b; --accent: #60a5fa; --accent-soft: #1e3a8a;
+      --bg: #0b1220; --card: #121b2f; --text: #e2e8f0; --muted: #94a3b8; --line: #1f2a40;
+      --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
+      --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
+      --chip: #1a2540; --shadow: none;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0b1220; --card: #111a2e; --text: #e2e8f0; --muted: #94a3b8;
-    --line: #1e293b; --accent: #60a5fa; --accent-soft: #1e3a8a;
+    --bg: #0b1220; --card: #121b2f; --text: #e2e8f0; --muted: #94a3b8; --line: #1f2a40;
+    --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
+    --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
+    --chip: #1a2540; --shadow: none;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
     font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
   header {
-    position: sticky; top: 0; z-index: 1; background: var(--bg);
-    padding: calc(env(safe-area-inset-top) + 12px) 16px 0;
-    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 2; background: var(--bg);
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 0; border-bottom: 1px solid var(--line);
   }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   h1 { margin: 0 0 10px; font-size: 22px; }
+  .sub { color: var(--muted); font-size: 13px; }
   .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    flex: none; border: 0; border-radius: 999px; padding: 7px 14px; cursor: pointer;
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    border: 0; border-radius: 999px; padding: 7px 12px 7px 14px; cursor: pointer;
     background: var(--card); color: var(--text); font: inherit; font-weight: 600;
     box-shadow: inset 0 0 0 1px var(--line);
   }
   .tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
-  main { padding: 16px; max-width: 720px; margin: 0 auto; }
+  .count {
+    min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 12px; line-height: 20px;
+    text-align: center; background: var(--chip); color: var(--muted);
+  }
+  .tab[aria-selected="true"] .count { background: var(--accent); color: var(--card); }
+  .banner {
+    margin: 12px 16px 0; padding: 8px 12px; border-radius: 10px; font-size: 13px;
+    background: var(--warn-soft); color: var(--warn);
+  }
+  main { padding: 12px 16px 16px; max-width: 720px; margin: 0 auto; display: grid; gap: 10px; }
+  .job {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+    box-shadow: var(--shadow); transition: opacity .25s, transform .25s;
+  }
+  .job.h1b { border-left: 4px solid var(--fire); }
+  .job.gone { opacity: 0; transform: translateX(40px); }
+  .row1 { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .company { font-weight: 700; color: var(--text); letter-spacing: .2px; }
+  .rank { font-weight: 700; color: var(--fire); background: var(--fire-soft); border-radius: 6px; padding: 0 6px; }
+  .ago { margin-left: auto; white-space: nowrap; }
+  .title { font-weight: 600; font-size: 16px; margin: 4px 0 2px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .quote { margin-top: 6px; font-size: 13px; font-style: italic; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--chip); color: var(--muted); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn {
+    border: 0; border-radius: 10px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer;
+    background: var(--chip); color: var(--text); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn.apply { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
+  .btn.star[aria-pressed="true"] { background: var(--warn-soft); color: var(--warn); }
+  .btn.done { background: var(--ok-soft); color: var(--ok); }
   .empty {
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
     padding: 32px 16px; text-align: center; color: var(--muted);
   }
   .empty b { display: block; color: var(--text); font-size: 17px; margin-bottom: 4px; }
-  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 16px 24px; }
+  .toast {
+    position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 16px); transform: translate(-50%, 120px);
+    background: #0f172a; color: #f8fafc; border-radius: 12px; padding: 10px 14px; display: flex; gap: 14px;
+    align-items: center; transition: transform .25s; max-width: calc(100% - 32px); z-index: 3;
+  }
+  .toast.show { transform: translate(-50%, 0); }
+  .toast button { background: none; border: 0; color: #93c5fd; font: inherit; font-weight: 700; cursor: pointer; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 4px 16px 80px; }
+  footer button { background: none; border: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }
 </style>
 </head>
 <body>
 <header>
-  <h1>Jobs</h1>
+  <div class="top">
+    <h1>Jobs</h1>
+    <span class="sub" id="sub"></span>
+  </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
 </header>
+<div class="banner">🧪 Preview: these are FAKE jobs to design the screen. Real jobs come later.</div>
 <main id="list"></main>
-<footer>Version <span id="ver"></span></footer>
+<footer>Version <span id="ver"></span> · <button id="reset">Bring back all fake jobs</button></footer>
+<div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 
 <script>
-  const VERSION = "v2 · auto-update test · 2026-11-11";
-  const TABS = ["H1B_LIST", "Workday", "Greenhouse", "Jobright"];
+  const VERSION = "v3 · UI preview with fake jobs · 2026-11-11";
+  const TABS = [
+    { name: "H1B_LIST", match: (j) => j.rank != null },
+    { name: "Workday", match: (j) => j.source === "workday" },
+    { name: "Greenhouse", match: (j) => j.source === "greenhouse" },
+    { name: "Jobright", match: (j) => j.source === "jobright" },
+  ];
 
-  document.getElementById("ver").textContent = VERSION;
-  const tabsEl = document.getElementById("tabs");
-  const listEl = document.getElementById("list");
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 
-  let current = TABS[0];
-  try { current = localStorage.getItem("tab") || current; } catch (e) {}
-  if (!TABS.includes(current)) current = TABS[0];
+  let jobs = [];
+  let status = load("status", {});   // id -> "done" | "skipped"
+  let stars = load("stars", {});     // id -> true/false (missing = use autostar)
+  let current = load("tab", "H1B_LIST");
+  if (!TABS.some((t) => t.name === current)) current = TABS[0].name;
+  let lastAction = null, toastTimer = null;
 
-  function render() {
-    tabsEl.innerHTML = "";
+  $("ver").textContent = VERSION;
+
+  const isOpen = (j) => !status[j.id];
+  const isStarred = (j) => (j.id in stars ? stars[j.id] : !!j.autostar);
+  function ago(min) {
+    if (min < 60) return min + "m";
+    if (min < 1440) return Math.floor(min / 60) + "h";
+    return Math.floor(min / 1440) + "d";
+  }
+
+  function renderTabs() {
+    $("tabs").innerHTML = "";
     for (const t of TABS) {
+      const n = jobs.filter((j) => isOpen(j) && t.match(j)).length;
       const b = document.createElement("button");
       b.className = "tab";
       b.setAttribute("role", "tab");
-      b.textContent = t;
-      b.setAttribute("aria-selected", t === current);
-      b.onclick = () => {
-        current = t;
-        try { localStorage.setItem("tab", t); } catch (e) {}
-        render();
-      };
-      tabsEl.appendChild(b);
+      b.setAttribute("aria-selected", t.name === current);
+      b.innerHTML = esc(t.name) + '<span class="count">' + n + "</span>";
+      b.onclick = () => { current = t.name; save("tab", current); render(); window.scrollTo(0, 0); };
+      $("tabs").appendChild(b);
     }
-    listEl.innerHTML = '<div class="empty"><b>No jobs yet</b>' + current + " jobs will show up here.</div>";
+    const open = jobs.filter(isOpen).length;
+    $("sub").textContent = open + " open";
   }
-  render();
 
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+  function card(j) {
+    const h1b = j.rank != null;
+    const tags = (j.tags || []).map((t) => '<span class="chip' + (t.startsWith("⚠") ? " warn" : "") + '">' + esc(t) + "</span>").join("");
+    const starred = isStarred(j);
+    return (
+      '<article class="job' + (h1b ? " h1b" : "") + '" data-id="' + esc(j.id) + '">' +
+        '<div class="row1">' +
+          (h1b ? "<span>🔥</span>" : "") +
+          '<span class="company">' + esc(h1b ? j.company.toUpperCase() : j.company) + "</span>" +
+          (h1b ? '<span class="rank">#' + esc(j.rank) + "</span>" : "") +
+          '<span class="ago">' + ago(j.posted_min) + "</span>" +
+        "</div>" +
+        '<div class="title">' + esc(j.title) + "</div>" +
+        '<div class="meta">📍 ' + esc(j.location) + " · 📡 " + esc(j.listener) + "</div>" +
+        (j.line ? '<div class="quote">💬 "' + esc(j.line) + '"</div>' : "") +
+        '<div class="chips"><span class="chip">' + esc(j.role) + "</span>" + tags + "</div>" +
+        '<div class="actions">' +
+          '<a class="btn apply" href="' + esc(j.url) + '" target="_blank" rel="noopener">Apply ↗</a>' +
+          '<button class="btn star" data-act="star" aria-pressed="' + starred + '" aria-label="Star">' + (starred ? "⭐" : "☆") + "</button>" +
+          '<button class="btn done" data-act="done" aria-label="Done">✓ Done</button>' +
+          '<button class="btn" data-act="skip" aria-label="Skip">✕</button>' +
+        "</div>" +
+      "</article>"
+    );
   }
+
+  function renderList() {
+    const tab = TABS.find((t) => t.name === current);
+    const list = jobs.filter((j) => isOpen(j) && tab.match(j)).sort((a, b) => a.posted_min - b.posted_min);
+    $("list").innerHTML = list.length
+      ? list.map(card).join("")
+      : '<div class="empty"><b>All caught up 🎉</b>No open ' + esc(current) + " jobs.</div>";
+  }
+
+  function render() { renderTabs(); renderList(); }
+
+  function showToast(text) {
+    $("toastText").textContent = text;
+    $("toast").classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $("toast").classList.remove("show"), 4000);
+  }
+
+  $("list").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const el = btn.closest(".job");
+    const id = el.dataset.id;
+    const job = jobs.find((j) => j.id === id);
+    const act = btn.dataset.act;
+    if (act === "star") {
+      stars[id] = !isStarred(job);
+      save("stars", stars);
+      renderList();
+      return;
+    }
+    status[id] = act === "done" ? "done" : "skipped";
+    save("status", status);
+    lastAction = id;
+    el.classList.add("gone");
+    setTimeout(render, 250);
+    showToast((act === "done" ? "✓ Done: " : "✕ Skipped: ") + job.company);
+  });
+
+  $("undo").onclick = () => {
+    if (lastAction) { delete status[lastAction]; save("status", status); lastAction = null; render(); }
+    $("toast").classList.remove("show");
+  };
+
+  $("reset").onclick = () => { status = {}; stars = {}; save("status", status); save("stars", stars); render(); };
+
+  fetch("data/mock-jobs.json", { cache: "no-store" })
+    .then((r) => r.json())
+    .then((d) => { jobs = d.jobs || []; render(); })
+    .catch(() => { $("list").innerHTML = '<div class="empty"><b>Could not load jobs</b>Check your internet and reopen the app.</div>'; });
+
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>
