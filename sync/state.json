@@ -1,15 +1,20 @@
 {
  "v": 1,
  "items": {
+  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
+   "s": "done",
+   "star": null,
+   "t": 1794438554464
+  },
   "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
    "s": "skipped",
    "star": null,
    "t": 1794438323132
   },
-  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
-   "s": "done",
+  "https://jobright.ai/jobs/info/6af4d2f6cd7be4db20d88c4d": {
+   "s": "skipped",
    "star": null,
-   "t": 1794438554464
+   "t": 1794438767778
   }
  },
  "blacklist": {},
