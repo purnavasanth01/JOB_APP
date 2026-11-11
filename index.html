@@ -40,30 +40,27 @@
   }
   header {
     position: sticky; top: 0; z-index: 2; background: var(--bg);
-    padding: calc(env(safe-area-inset-top) + 12px) 16px 0; border-bottom: 1px solid var(--line);
+    padding: calc(env(safe-area-inset-top) + 10px) 16px 0; border-bottom: 1px solid var(--line);
   }
-  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-  h1 { margin: 0 0 10px; font-size: 22px; }
-  .sub { color: var(--muted); font-size: 13px; }
-  .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+  .head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  h1 { margin: 0 0 8px; font-size: 21px; }
+  .sub { color: var(--muted); font-size: 12px; text-align: right; }
+  .tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
   .tab {
-    flex: none; display: inline-flex; align-items: center; gap: 6px;
-    border: 0; border-radius: 999px; padding: 7px 12px 7px 14px; cursor: pointer;
-    background: var(--card); color: var(--text); font: inherit; font-weight: 600;
+    flex: none; display: inline-flex; align-items: center; gap: 5px;
+    border: 0; border-radius: 999px; padding: 4px 8px 4px 11px; cursor: pointer;
+    background: var(--card); color: var(--text); font: inherit; font-size: 13px; font-weight: 600;
     box-shadow: inset 0 0 0 1px var(--line);
   }
   .tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); box-shadow: none; }
   .count {
-    min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 12px; line-height: 20px;
+    min-width: 18px; padding: 0 5px; border-radius: 999px; font-size: 11px; line-height: 18px;
     text-align: center; background: var(--chip); color: var(--muted);
   }
   .tab[aria-selected="true"] .count { background: var(--accent); color: var(--card); }
-  .banner {
-    margin: 12px 16px 0; padding: 8px 12px; border-radius: 10px; font-size: 13px;
-    background: var(--warn-soft); color: var(--warn);
-  }
-  main { padding: 12px 16px 16px; max-width: 720px; margin: 0 auto; display: grid; gap: 10px; }
+  main { padding: 12px 16px 16px; max-width: 720px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .note { color: var(--muted); font-size: 12px; text-align: center; }
   .job {
     background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px;
     box-shadow: var(--shadow); transition: opacity .25s, transform .25s;
@@ -95,6 +92,7 @@
   .btn.apply { background: var(--apply); color: #fff; flex: 1; justify-content: center; }
   .btn.star[aria-pressed="true"] { background: var(--warn-soft); color: var(--warn); }
   .btn.done { background: var(--ok-soft); color: var(--ok); }
+  .more { justify-self: center; }
   .empty {
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
     padding: 32px 16px; text-align: center; color: var(--muted);
@@ -108,52 +106,150 @@
   .toast.show { transform: translate(-50%, 0); }
   .toast button { background: none; border: 0; color: #93c5fd; font: inherit; font-weight: 700; cursor: pointer; }
   footer { text-align: center; color: var(--muted); font-size: 12px; padding: 4px 16px 80px; }
-  footer button { background: none; border: 0; color: var(--accent); font: inherit; cursor: pointer; text-decoration: underline; }
 </style>
 </head>
 <body>
 <header>
-  <div class="top">
+  <div class="head">
     <h1>Jobs</h1>
-    <span class="sub" id="sub"></span>
+    <span class="sub" id="sub">loading…</span>
   </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
 </header>
-<div class="banner">🧪 Preview: these are FAKE jobs to design the screen. Real jobs come later.</div>
 <main id="list"></main>
-<footer>Version <span id="ver"></span> · <button id="reset">Bring back all fake jobs</button></footer>
+<footer>Version <span id="ver"></span></footer>
 <div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 
 <script>
-  const VERSION = "v5 · gold top-25 cards · 2026-11-11";
+  const VERSION = "v6 · real jobs · 2026-11-11";
+  const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
+  const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
+  const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
+  const PAGE = 100;                    // cards drawn at a time ("Show more" adds more)
+  const REFRESH_MS = 3 * 60 * 1000;    // re-read the job list every 3 minutes while the app is open
+
+  const recent = (j) => j.found >= START;
   const TABS = [
-    { name: "H1B_LIST", match: (j) => j.rank != null },
-    { name: "Workday", match: (j) => j.source === "workday" },
-    { name: "Greenhouse", match: (j) => j.source === "greenhouse" },
-    { name: "Jobright", match: (j) => j.source === "jobright" },
+    { name: "H1B_LIST", match: (j) => recent(j) && j.rank != null },
+    { name: "Workday", match: (j) => recent(j) && j.type === "workday" },
+    { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
+    { name: "Jobright", match: (j) => recent(j) && j.type === "jobright" },
+    { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
+    { name: "HiringCafe", match: (j) => recent(j) && j.type === "hiringcafe",
+      empty: "No hiring.cafe source yet. It blocks scripts, so the listener can't read it." },
+    { name: "ALL", match: () => true },
   ];
+  const SOURCE_NAMES = {
+    workday: "Workday", greenhouse: "Greenhouse", jobright: "Jobright list", simplify: "Simplify list",
+    vansh: "vanshb03 list", amazon: "Amazon careers", microsoft: "Microsoft careers", google: "Google careers",
+    orc: "Oracle Cloud", phenom: "Phenom", eightfold: "Eightfold", smartrecruiters: "SmartRecruiters",
+    ashby: "Ashby", lever: "Lever", hiringcafe: "hiring.cafe",
+  };
+  const COMPANY_STOP = new Set(["inc", "llc", "ltd", "corp", "corporation", "co", "company", "the", "plc", "lp",
+    "group", "holdings", "technologies", "technology", "usa", "us", "na", "incorporated"]);
 
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+  const normCompany = (s) => (s || "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9 ]+/g, " ")
+    .split(/\s+/).filter((w) => w && !COMPANY_STOP.has(w)).join("");
 
   let jobs = [];
-  let status = load("status", {});   // id -> "done" | "skipped"
-  let stars = load("stars", {});     // id -> true/false (missing = use autostar)
+  let status = load("status", {});   // job id -> "done" | "skipped"
+  let stars = load("stars", {});     // job id -> true/false (missing = company autostar)
   let current = load("tab", "H1B_LIST");
   if (!TABS.some((t) => t.name === current)) current = TABS[0].name;
-  let lastAction = null, toastTimer = null;
+  let shown = PAGE, lastAction = null, toastTimer = null, updatedAt = null;
 
   $("ver").textContent = VERSION;
 
+  // ---------- data ----------
+  function parseCSV(text) {
+    const rows = [];
+    let row = [], field = "", q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) {
+        if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (c === '"') q = false;
+        else field += c;
+      } else if (c === '"') q = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c !== "\r") field += c;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    const head = rows.shift() || [];
+    return rows.filter((r) => r.length > 1).map((r) => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
+  }
+
+  function cleanTags(s) {
+    const parts = [];
+    for (const p of (s || "").split(", ")) {
+      const starts = /^(⚠|🔍|🎓|MISSED|desc not checked|via L3|\d+ tech words)/.test(p);
+      if (!starts && parts.length) parts[parts.length - 1] += ", " + p; else if (p) parts.push(p);
+    }
+    const out = [];
+    for (const t of parts) {
+      if (t === "desc not checked" || t === "via L3") continue;
+      if (/^\d+ tech words/.test(t) && out.length && out[out.length - 1].startsWith("🔍")) { out[out.length - 1] += ", " + t; continue; }
+      out.push(t);
+    }
+    return out;
+  }
+
+  function buildJobs(csvText, targets) {
+    const byName = new Map();
+    for (const t of targets) for (const n of [t.name, ...(t.aliases || [])]) byName.set(normCompany(n), t);
+    const seen = new Set(), list = [];
+    for (const r of parseCSV(csvText)) {
+      const id = r.url || r.company + "|" + r.title;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const t = byName.get(normCompany(r.company));
+      const type = (r.source || "").split(":")[0];
+      list.push({
+        id, company: t ? t.name : r.company, rank: t ? t.rank : null, autostar: !!(t && t.autostar),
+        flag: t && t.flag ? t.flag : "", title: r.title, role: r.role || "", location: r.location,
+        type, listener: SOURCE_NAMES[type] || type, url: r.url, line: r.evidence || "",
+        tags: cleanTags(r.tags), found: r.found_at, time: Date.parse(r.found_at.replace(" ", "T") + ":00Z"),
+      });
+    }
+    return list.sort((a, b) => b.time - a.time);
+  }
+
+  async function refresh() {
+    try {
+      const [csvRes, tRes] = await Promise.all([fetch(ALERTS_URL, { cache: "no-store" }), fetch(TARGETS_URL, { cache: "no-store" })]);
+      if (!csvRes.ok || !tRes.ok) throw new Error("HTTP " + csvRes.status + "/" + tRes.status);
+      const csvText = await csvRes.text();
+      const targets = (await tRes.json()).companies || [];
+      jobs = buildJobs(csvText, targets);
+      updatedAt = new Date();
+      try { localStorage.setItem("cache", JSON.stringify({ csvText, targets, at: updatedAt.getTime() })); } catch (e) {}
+    } catch (e) {
+      const c = load("cache", null);
+      if (c && !jobs.length) { jobs = buildJobs(c.csvText, c.targets); updatedAt = new Date(c.at); }
+      if (!jobs.length) {
+        $("list").innerHTML = '<div class="empty"><b>Could not load jobs</b>Check your internet and reopen the app.</div>';
+        $("sub").textContent = "offline";
+        return;
+      }
+    }
+    render();
+  }
+
+  // ---------- screen ----------
   const isOpen = (j) => !status[j.id];
-  const isStarred = (j) => (j.id in stars ? stars[j.id] : !!j.autostar);
-  function ago(min) {
+  const isStarred = (j) => (j.id in stars ? stars[j.id] : j.autostar);
+  function ago(t) {
+    const min = Math.max(0, Math.round((Date.now() - t) / 60000));
     if (min < 60) return min + "m";
     if (min < 1440) return Math.floor(min / 60) + "h";
     return Math.floor(min / 1440) + "d";
   }
+  const hhmm = (d) => d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
   function renderTabs() {
     $("tabs").innerHTML = "";
@@ -164,17 +260,18 @@
       b.setAttribute("role", "tab");
       b.setAttribute("aria-selected", t.name === current);
       b.innerHTML = esc(t.name) + '<span class="count">' + n + "</span>";
-      b.onclick = () => { current = t.name; save("tab", current); render(); window.scrollTo(0, 0); };
+      b.onclick = () => { current = t.name; shown = PAGE; save("tab", current); render(); window.scrollTo(0, 0); };
       $("tabs").appendChild(b);
     }
-    const open = jobs.filter(isOpen).length;
-    $("sub").textContent = open + " open";
+    $("sub").textContent = updatedAt ? "updated " + hhmm(updatedAt) : "";
   }
 
   function card(j) {
-    const h1b = j.rank != null;
-    const top = h1b && !!j.autostar;
-    const tags = (j.tags || []).map((t) => '<span class="chip' + (t.startsWith("⚠") ? " warn" : "") + '">' + esc(t) + "</span>").join("");
+    const h1b = j.rank != null, top = h1b && j.autostar;
+    const tags = [...(j.flag ? ["⚠ " + j.flag] : []), ...j.tags].map((t) => {
+      const short = t.length > 90 ? t.slice(0, 88) + "…" : t;
+      return '<span class="chip' + (t.startsWith("⚠") ? " warn" : "") + '" title="' + esc(t) + '">' + esc(short) + "</span>";
+    }).join("");
     const starred = isStarred(j);
     return (
       '<article class="job' + (top ? " top25" : h1b ? " h1b" : "") + '" data-id="' + esc(j.id) + '">' +
@@ -182,12 +279,12 @@
           (top ? "<span>👑</span>" : h1b ? "<span>🔥</span>" : "") +
           '<span class="company">' + esc(h1b ? j.company.toUpperCase() : j.company) + "</span>" +
           (h1b ? '<span class="rank">' + (top ? "★ #" : "#") + esc(j.rank) + "</span>" : "") +
-          '<span class="role">' + esc(j.role) + "</span>" +
-          '<span class="ago">' + ago(j.posted_min) + " ago</span>" +
+          (j.role ? '<span class="role">' + esc(j.role) + "</span>" : "") +
+          '<span class="ago">' + ago(j.time) + " ago</span>" +
         "</div>" +
         '<div class="title">' + esc(j.title) + "</div>" +
-        '<div class="meta">📍 ' + esc(j.location) + " · 📡 " + esc(j.listener) + "</div>" +
-        (j.line ? '<div class="quote">💬 "' + esc(j.line) + '"</div>' : "") +
+        '<div class="meta">📍 ' + esc(j.location || "?") + " · 📡 " + esc(j.listener) + "</div>" +
+        (j.line ? '<div class="quote">💬 "' + esc(j.line.slice(0, 220)) + '"</div>' : "") +
         (tags ? '<div class="chips">' + tags + "</div>" : "") +
         '<div class="actions">' +
           '<a class="btn apply" href="' + esc(j.url) + '" target="_blank" rel="noopener">Apply ↗</a>' +
@@ -201,10 +298,18 @@
 
   function renderList() {
     const tab = TABS.find((t) => t.name === current);
-    const list = jobs.filter((j) => isOpen(j) && tab.match(j)).sort((a, b) => a.posted_min - b.posted_min);
-    $("list").innerHTML = list.length
-      ? list.map(card).join("")
-      : '<div class="empty"><b>All caught up 🎉</b>No open ' + esc(current) + " jobs.</div>";
+    const list = jobs.filter((j) => isOpen(j) && tab.match(j));
+    const scope = tab.name === "ALL" ? "All jobs since Oct 31" : "Jobs found since Nov 11";
+    if (!list.length) {
+      $("list").innerHTML = '<div class="empty"><b>' + (tab.empty ? "Nothing here yet" : "All caught up 🎉") + "</b>" +
+        esc(tab.empty || "No open " + tab.name + " jobs. " + scope + ".") + "</div>";
+      return;
+    }
+    let html = '<div class="note">' + scope + " · newest first</div>" + list.slice(0, shown).map(card).join("");
+    if (list.length > shown) html += '<button class="btn more" id="more">Show more (' + (list.length - shown) + " left)</button>";
+    $("list").innerHTML = html;
+    const m = $("more");
+    if (m) m.onclick = () => { shown += PAGE; renderList(); };
   }
 
   function render() { renderTabs(); renderList(); }
@@ -222,13 +327,13 @@
     const el = btn.closest(".job");
     const id = el.dataset.id;
     const job = jobs.find((j) => j.id === id);
-    const act = btn.dataset.act;
-    if (act === "star") {
+    if (btn.dataset.act === "star") {
       stars[id] = !isStarred(job);
       save("stars", stars);
       renderList();
       return;
     }
+    const act = btn.dataset.act;
     status[id] = act === "done" ? "done" : "skipped";
     save("status", status);
     lastAction = id;
@@ -242,12 +347,9 @@
     $("toast").classList.remove("show");
   };
 
-  $("reset").onclick = () => { status = {}; stars = {}; save("status", status); save("stars", stars); render(); };
-
-  fetch("data/mock-jobs.json", { cache: "no-store" })
-    .then((r) => r.json())
-    .then((d) => { jobs = d.jobs || []; render(); })
-    .catch(() => { $("list").innerHTML = '<div class="empty"><b>Could not load jobs</b>Check your internet and reopen the app.</div>'; });
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
