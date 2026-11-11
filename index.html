@@ -145,7 +145,7 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v9 · sync + notifications · 2026-11-11";
+  const VERSION = "v10 · Jobright tab second · 2026-11-11";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
@@ -155,9 +155,9 @@
   const recent = (j) => j.found >= START;
   const TABS = [
     { name: "H1B_LIST", match: (j) => recent(j) && j.rank != null },
+    { name: "Jobright", match: (j) => recent(j) && j.type === "jobright" },
     { name: "Workday", match: (j) => recent(j) && j.type === "workday" },
     { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
-    { name: "Jobright", match: (j) => recent(j) && j.type === "jobright" },
     { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
     { name: "HiringCafe", match: (j) => recent(j) && j.type === "hiringcafe",
       empty: "No hiring.cafe source yet. It blocks scripts, so the listener can't read it." },
