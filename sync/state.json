@@ -13,5 +13,19 @@
   }
  },
  "blacklist": {},
- "subs": {}
+ "subs": {
+  "6hh1s0ko": {
+   "sub": {
+    "endpoint": "https://fcm.googleapis.com/fcm/send/di9VEcPRpE0:APA91bHLg93-Zq7liGkZbQocrMqyqzdflewZUNGY7G4qNhuw42LXq05x231nMnL6ZECB-dHUmRnxgUXR5nTfjL6s9ajzNYRUWfJxLSCp3iL7vsfxBGLDia9rt3SSRP__9kpssxzAodTH",
+    "expirationTime": null,
+    "keys": {
+     "p256dh": "BErTWV4w1LHrLf_h1kvIKKcwCm9VUNfnVgEGBs7JGdfsCRFxy1FXpI-3F7MMJFcmfZ5ic7gn-SwNhamtIg80nrE",
+     "auth": "KaeQiNLBXtj2kL7dwmQkCw"
+    }
+   },
+   "on": true,
+   "name": "Android phone",
+   "t": 1794438734129
+  }
+ }
 }
