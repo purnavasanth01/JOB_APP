@@ -14,7 +14,7 @@
     --accent: #1d4ed8; --accent-soft: #dbeafe; --fire: #ea580c; --fire-soft: #ffedd5;
     --ok: #15803d; --ok-soft: #dcfce7; --warn: #b45309; --warn-soft: #fef3c7;
     --chip: #f1f5f9; --shadow: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 8px rgba(15, 23, 42, .04);
-    --apply: #1d4ed8;
+    --apply: #1d4ed8; --gold: #eab308; --gold-soft: #fef9c3; --gold-glow: rgba(234, 179, 8, .18);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -22,6 +22,7 @@
       --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
       --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
       --chip: #1a2540; --shadow: none; --apply: #2563eb;
+      --gold: #facc15; --gold-soft: #3a2f05; --gold-glow: rgba(250, 204, 21, .16);
     }
   }
   :root[data-theme="dark"] {
@@ -29,6 +30,7 @@
     --accent: #60a5fa; --accent-soft: #1e3a8a; --fire: #fb923c; --fire-soft: #431407;
     --ok: #4ade80; --ok-soft: #14532d; --warn: #fbbf24; --warn-soft: #451a03;
     --chip: #1a2540; --shadow: none; --apply: #2563eb;
+    --gold: #facc15; --gold-soft: #3a2f05; --gold-glow: rgba(250, 204, 21, .16);
   }
   * { box-sizing: border-box; }
   body {
@@ -67,6 +69,12 @@
     box-shadow: var(--shadow); transition: opacity .25s, transform .25s;
   }
   .job.h1b { border-left: 4px solid var(--fire); }
+  .job.top25 {
+    border: 1.5px solid var(--gold); border-left: 5px solid var(--gold);
+    background: linear-gradient(135deg, var(--gold-soft), var(--card) 60%);
+    box-shadow: 0 0 0 3px var(--gold-glow), var(--shadow);
+  }
+  .job.top25 .rank { color: #1c1400; background: var(--gold); }
   .job.gone { opacity: 0; transform: translateX(40px); }
   .row1 { display: flex; align-items: center; gap: 6px; min-width: 0; }
   .company { font-weight: 800; font-size: 17px; letter-spacing: .2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -117,7 +125,7 @@
 <div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 
 <script>
-  const VERSION = "v4 · compact cards · 2026-11-11";
+  const VERSION = "v5 · gold top-25 cards · 2026-11-11";
   const TABS = [
     { name: "H1B_LIST", match: (j) => j.rank != null },
     { name: "Workday", match: (j) => j.source === "workday" },
@@ -165,14 +173,15 @@
 
   function card(j) {
     const h1b = j.rank != null;
+    const top = h1b && !!j.autostar;
     const tags = (j.tags || []).map((t) => '<span class="chip' + (t.startsWith("⚠") ? " warn" : "") + '">' + esc(t) + "</span>").join("");
     const starred = isStarred(j);
     return (
-      '<article class="job' + (h1b ? " h1b" : "") + '" data-id="' + esc(j.id) + '">' +
+      '<article class="job' + (top ? " top25" : h1b ? " h1b" : "") + '" data-id="' + esc(j.id) + '">' +
         '<div class="row1">' +
-          (h1b ? "<span>🔥</span>" : "") +
+          (top ? "<span>👑</span>" : h1b ? "<span>🔥</span>" : "") +
           '<span class="company">' + esc(h1b ? j.company.toUpperCase() : j.company) + "</span>" +
-          (h1b ? '<span class="rank">#' + esc(j.rank) + "</span>" : "") +
+          (h1b ? '<span class="rank">' + (top ? "★ #" : "#") + esc(j.rank) + "</span>" : "") +
           '<span class="role">' + esc(j.role) + "</span>" +
           '<span class="ago">' + ago(j.posted_min) + " ago</span>" +
         "</div>" +
