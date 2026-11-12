@@ -55,6 +55,11 @@
    "s": "done",
    "star": null,
    "t": 1794453820379
+  },
+  "https://job-boards.greenhouse.io/samsungsemiconductor/jobs/8197305003": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794453873878
   }
  },
  "blacklist": {
