@@ -225,6 +225,11 @@
    "s": "done",
    "star": null,
    "t": 1794602567417
+  },
+  "https://jobright.ai/jobs/info/6af7668e3ba46d7b6c1665c2": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794611000851
   }
  },
  "blacklist": {
