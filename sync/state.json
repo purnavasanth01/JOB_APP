@@ -135,6 +135,21 @@
    "s": "done",
    "star": null,
    "t": 1794540054453
+  },
+  "https://jobright.ai/jobs/info/6af65e7c8cc703bba47b250f": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794547497488
+  },
+  "https://jobright.ai/jobs/info/6af635ff80054650a5e7d249": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794547500721
+  },
+  "https://jobright.ai/jobs/info/6af67c5f8cc703bba47b2f48": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794547504038
   }
  },
  "blacklist": {
