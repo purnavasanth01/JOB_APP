@@ -170,6 +170,11 @@
    "s": "skipped",
    "star": null,
    "t": 1794547544204
+  },
+  "https://jobright.ai/jobs/info/6af63999a4a5218a07e846e3": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794547554437
   }
  },
  "blacklist": {
@@ -182,6 +187,11 @@
    "name": "Zotec Partners",
    "on": true,
    "t": 1794439136644
+  },
+  "baskhealth": {
+   "name": "Bask Health",
+   "on": true,
+   "t": 1794547549771
   }
  },
  "subs": {
