@@ -129,9 +129,10 @@
 <body>
 <header>
   <div class="head">
-    <h1>Jobs</h1>
+    <h1 id="title">Jobs</h1>
     <div class="headbtns">
       <span class="sub" id="sub">loading…</span>
+      <button class="iconbtn" id="swBtn" aria-label="Switch Account" title="Switch Account">🔄</button>
       <button class="iconbtn" id="blBtn" aria-label="Blacklisted companies">🚫 0</button>
       <button class="iconbtn" id="syncBtn" aria-label="Sync status">☁️</button>
       <button class="iconbtn" id="setBtn" aria-label="Settings">⚙️</button>
@@ -145,7 +146,7 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v11 · hide 'without sponsorship' jobs · 2026-11-11";
+  const VERSION = "v12 · Switch Account + Germany dashboard (empty tabs) · 2026-11-13";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
@@ -153,16 +154,37 @@
   const REFRESH_MS = 3 * 60 * 1000;    // re-read the job list every 3 minutes while the app is open
 
   const recent = (j) => j.found >= START;
-  const TABS = [
-    { name: "H1B_LIST", match: (j) => recent(j) && j.rank != null },
-    { name: "Jobright", match: (j) => recent(j) && j.type === "jobright" },
-    { name: "Workday", match: (j) => recent(j) && j.type === "workday" },
-    { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
-    { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
-    { name: "HiringCafe", match: (j) => recent(j) && j.type === "hiringcafe",
-      empty: "No hiring.cafe source yet. It blocks scripts, so the listener can't read it." },
-    { name: "ALL", match: () => true },
-  ];
+  // Two dashboards ("accounts") in one app. Same data store, different tabs. Which one is open is remembered
+  // per device only (a friend's phone keeps its own choice).
+  const DE_TYPES = ["stepstone", "xing", "indeed", "glassdoor", "linkedin"];   // sources of the Germany dashboard
+  const isDE = (j) => DE_TYPES.includes(j.type);
+  const DE_EMPTY = "Germany job search is not connected yet. Jobs will show here once the listener reads this site.";
+  const ACCOUNTS = {
+    us: {
+      title: "Jobs 🇺🇸", name: "USA dashboard", scope: (tab) => tab === "ALL" ? "All jobs since Oct 31" : "Jobs found since Nov 11",
+      tabs: [
+        { name: "H1B_LIST", match: (j) => !isDE(j) && recent(j) && j.rank != null },
+        { name: "Jobright", match: (j) => recent(j) && j.type === "jobright" },
+        { name: "Workday", match: (j) => recent(j) && j.type === "workday" },
+        { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
+        { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
+        { name: "HiringCafe", match: (j) => recent(j) && j.type === "hiringcafe",
+          empty: "No hiring.cafe source yet. It blocks scripts, so the listener can't read it." },
+        { name: "ALL", match: (j) => !isDE(j) },
+      ],
+    },
+    de: {
+      title: "Jobs 🇩🇪", name: "Germany dashboard", scope: () => "Germany jobs",
+      tabs: [
+        { name: "Stepstone", match: (j) => j.type === "stepstone", empty: DE_EMPTY },
+        { name: "Xing", match: (j) => j.type === "xing", empty: DE_EMPTY },
+        { name: "Indeed", match: (j) => j.type === "indeed", empty: DE_EMPTY },
+        { name: "Glassdoor", match: (j) => j.type === "glassdoor", empty: DE_EMPTY },
+        { name: "LinkedIn", match: (j) => j.type === "linkedin", empty: DE_EMPTY },
+        { name: "ALL", match: (j) => isDE(j), empty: DE_EMPTY },
+      ],
+    },
+  };
   const SOURCE_NAMES = {
     workday: "Workday", greenhouse: "Greenhouse", jobright: "Jobright list", simplify: "Simplify list",
     vansh: "vanshb03 list", amazon: "Amazon careers", microsoft: "Microsoft careers", google: "Google careers",
@@ -215,7 +237,10 @@
     changed();
   }
   const blacklistOn = () => Object.entries(S.blacklist).filter(([, b]) => b.on);
-  let current = load("tab", "H1B_LIST");
+  let account = load("account", "us");                // which dashboard is open (this device only)
+  if (!ACCOUNTS[account]) account = "us";
+  let TABS = ACCOUNTS[account].tabs;
+  let current = load("tab_" + account, account === "us" ? load("tab", "H1B_LIST") : "");   // each dashboard remembers its own tab
   if (!TABS.some((t) => t.name === current)) current = TABS[0].name;
   let shown = PAGE, lastAction = null, toastTimer = null, updatedAt = null;
 
@@ -362,9 +387,11 @@
       b.setAttribute("role", "tab");
       b.setAttribute("aria-selected", t.name === current);
       b.innerHTML = esc(t.name) + '<span class="count">' + n + "</span>";
-      b.onclick = () => { current = t.name; shown = PAGE; save("tab", current); render(); window.scrollTo(0, 0); };
+      b.onclick = () => { current = t.name; shown = PAGE; save("tab_" + account, current); render(); window.scrollTo(0, 0); };
       $("tabs").appendChild(b);
     }
+    $("title").textContent = ACCOUNTS[account].title;
+    document.title = "Job Listener";
     $("sub").textContent = updatedAt ? "updated " + hhmm(updatedAt) : "";
     $("blBtn").textContent = "🚫 " + blacklistOn().length;
   }
@@ -402,7 +429,7 @@
   function renderList() {
     const tab = TABS.find((t) => t.name === current);
     const list = jobs.filter((j) => isOpen(j) && tab.match(j));
-    const scope = tab.name === "ALL" ? "All jobs since Oct 31" : "Jobs found since Nov 11";
+    const scope = ACCOUNTS[account].scope(tab.name);
     if (!list.length) {
       $("list").innerHTML = '<div class="empty"><b>' + (tab.empty ? "Nothing here yet" : "All caught up 🎉") + "</b>" +
         esc(tab.empty || "No open " + tab.name + " jobs. " + scope + ".") + "</div>";
@@ -503,6 +530,30 @@
       showToast("🚫 Blacklisted: " + job.company);
     };
   }
+
+  // ---------- switch account (= switch dashboard) ----------
+  function switchAccount() {
+    const to = account === "us" ? "de" : "us";
+    openSheet(
+      "<h2>🔄 Switch Account?</h2>" +
+      "<p>You are on the <b>" + esc(ACCOUNTS[account].name) + "</b>. Do you want to switch to the <b>" + esc(ACCOUNTS[to].name) + "</b>?</p>" +
+      '<div class="row"><button class="btn" id="sw-no">No</button><button class="btn done" id="sw-yes">Yes, switch</button></div>');
+    $("sw-no").onclick = closeSheet;
+    $("sw-yes").onclick = () => {
+      account = to;
+      save("account", account);
+      TABS = ACCOUNTS[account].tabs;
+      current = load("tab_" + account, "");
+      if (!TABS.some((t) => t.name === current)) current = TABS[0].name;
+      shown = PAGE;
+      closeSheet();
+      render();
+      $("tabs").scrollLeft = 0;            // new dashboard: show its first tab
+      window.scrollTo(0, 0);
+      showToast("Switched to " + ACCOUNTS[account].name);
+    };
+  }
+  $("swBtn").onclick = switchAccount;
 
   $("blBtn").onclick = () => {
     const list = blacklistOn();
