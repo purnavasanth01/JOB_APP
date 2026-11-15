@@ -247,14 +247,19 @@
    "t": 1794700919006
   },
   "https://jobright.ai/jobs/info/6af7e7db42ae65e2c8f39f33": {
-   "s": "",
+   "s": "skipped",
    "star": null,
-   "t": 1794780194409
+   "t": 1794781613337
   },
   "https://jobright.ai/jobs/info/6af7b012e3d8d612bf425d3c": {
    "s": "skipped",
    "star": null,
    "t": 1794780195542
+  },
+  "https://jobright.ai/jobs/info/6a7b0b42ecf5194164fbb968": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794781614236
   }
  },
  "blacklist": {
@@ -288,5 +293,6 @@
    "name": "Android phone",
    "t": 1794438734129
   }
- }
+ },
+ "subs_de": {}
 }
