@@ -295,6 +295,11 @@
    "s": "done",
    "star": null,
    "t": 1794784925974
+  },
+  "https://apply.careers.microsoft.com/careers/job/1970393557073455": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794787692439
   }
  },
  "blacklist": {
