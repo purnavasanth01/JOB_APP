@@ -125,6 +125,30 @@
   .sheet .stack .btn { justify-content: center; padding: 11px; }
   .btn.danger { background: #dc2626; color: #fff; }
   .btn.danger:disabled { opacity: .45; }
+  .trkq { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
+    color: var(--text); font: inherit; font-size: 15px; }
+  .trkq:focus { outline: 2px solid var(--accent); }
+  .applied { margin-left: auto; flex: none; white-space: nowrap; font-size: 12px; color: var(--ok); font-weight: 600; }
+  .usc { margin-top: 5px; font-size: 12px; color: var(--muted); }
+  .usc .uh { font-weight: 700; color: var(--text); }
+  .usc .grid { display: grid; grid-template-columns: 54px repeat(4, minmax(0, 1fr)); gap: 1px 6px; margin-top: 2px;
+    font-variant-numeric: tabular-nums; }
+  .usc .grid span { white-space: nowrap; }
+  .usc .grid .fy { font-size: 11px; color: var(--muted); }
+  .usc .grid .num { font-weight: 700; color: var(--text); }
+  .usc .grid .new { color: var(--ok); font-weight: 600; }
+  .usc .grid .lab { color: var(--muted); }
+  .usc.none { font-style: italic; }
+  .sortbtn { border: 0; background: var(--chip); color: var(--accent); font: inherit; font-size: 12px; font-weight: 700;
+    border-radius: 999px; padding: 2px 10px; cursor: pointer; margin-left: 6px; }
+  .hl { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 10px; }
+  .hl th, .hl td { text-align: left; padding: 4px 6px 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .hl th { color: var(--muted); font-weight: 600; font-size: 11px; }
+  .hl td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 700; padding: 0 8px; border-radius: 999px; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.bad { background: var(--warn-soft); color: var(--warn); }
+  .hlog { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
   .blrow { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--line); }
 </style>
 </head>
@@ -135,6 +159,7 @@
     <button class="iconbtn" id="swBtn">Switch Account</button>
     <span class="sub" id="sub">loading…</span>
     <div class="headbtns">
+      <button class="iconbtn" id="hlBtn" aria-label="Health check">🩺</button>
       <button class="iconbtn" id="blBtn" aria-label="Blacklisted companies">🚫 0</button>
       <button class="iconbtn" id="syncBtn" aria-label="Sync status">☁️</button>
       <button class="iconbtn" id="setBtn" aria-label="Settings">⚙️</button>
@@ -148,9 +173,11 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v14 · Germany dashboard reads German jobs + separate notification list · 2026-11-13";
+  const VERSION = "v16 · TRACKER tab (applied jobs + search), USCIS H-1B numbers, 🩺 health check · 2026-11-17";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
+  const H1B_URL = "h1b.json";                                  // official USCIS numbers, built by tools/build_h1b.py
+  const WATCHMAN_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/watchman/watchman.json";
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
   const PAGE = 100;                    // cards drawn at a time ("Show more" adds more)
   const REFRESH_MS = 3 * 60 * 1000;    // re-read the job list every 3 minutes while the app is open
@@ -171,8 +198,7 @@
         { name: "Workday", match: (j) => recent(j) && j.type === "workday" },
         { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
         { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
-        { name: "HiringCafe", match: (j) => recent(j) && j.type === "hiringcafe",
-          empty: "No hiring.cafe source yet. It blocks scripts, so the listener can't read it." },
+        { name: "TRACKER", tracker: true, match: (j) => itemOf(j.id).s === "done" },   // every job marked ✓ Applied, with a search bar
         { name: "ALL", match: (j) => !isDE(j) },
       ],
     },
@@ -259,6 +285,61 @@
 
   $("ver").textContent = VERSION;
 
+  // ---------- official USCIS H-1B numbers (h1b.json, built from the USCIS Employer Data Hub) ----------
+  let H1B = null;                                  // { meta: { years, suffix }, co: { "AMAZON": [[total, new] per fiscal year] } }
+  let SUFFIX = new Set();
+  // Company name -> match key. MUST stay the same as norm() in tools/build_h1b.py (it even reads its suffix list from h1b.json).
+  function normKey(name) {
+    const w = String(name || "").toUpperCase().replace(/&/g, " AND ").replace(/[’'`]/g, "").replace(/[^A-Z0-9]+/g, " ").trim().split(" ").filter(Boolean);
+    while (w.length && w[0] === "THE") w.shift();
+    while (w.length > 1 && SUFFIX.has(w[w.length - 1])) w.pop();
+    return w.join(" ");
+  }
+  // null = USCIS has no record under this name; undefined = numbers not loaded yet
+  function uscis(j) {
+    if (!H1B) return undefined;
+    if (j.usc !== undefined) return j.usc;
+    let v = null;
+    for (const n of [j.company, j.rawCompany, ...(j.aliases || [])]) {
+      const r = n && H1B.co[normKey(n)];
+      if (r) { v = r; break; }
+    }
+    return (j.usc = v);
+  }
+  const h1bScore = (j) => { const v = uscis(j); return v ? v.reduce((a, y) => a + y[0], 0) : -1; };   // 4-year total
+  const fmtN = (n) => Number(n).toLocaleString("en-US");
+  function uscHtml(j) {
+    if (account !== "us" || !H1B) return "";
+    const v = uscis(j), ys = H1B.meta.years;
+    const tip = "Official USCIS H-1B Employer Data Hub. FY = US government year (Oct to Sep). total = all approved H-1B petitions; new = brand-new H-1B workers (includes students changing from F-1).";
+    if (!v) return '<div class="usc none" title="' + esc(tip) + '">🏛 USCIS: no H-1B record under this company name</div>';
+    const idx = ys.map((_, i) => i).reverse();                                   // newest year first
+    return '<div class="usc" title="' + esc(tip) + '"><span class="uh">🏛 USCIS H-1B approvals</span><div class="grid"><span></span>' +
+      idx.map((i) => '<span class="fy">FY' + String(ys[i]).slice(2) + "</span>").join("") +
+      '<span class="lab">total</span>' + idx.map((i) => '<span class="num">' + fmtN(v[i][0]) + "</span>").join("") +
+      '<span class="lab">new</span>' + idx.map((i) => '<span class="new">' + fmtN(v[i][1]) + "</span>").join("") + "</div></div>";
+  }
+  async function loadH1B() {
+    try {
+      const r = await fetch(H1B_URL, { cache: "no-cache" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      SUFFIX = new Set(d.meta.suffix || []);
+      for (const j of jobs) j.usc = undefined;
+      H1B = d;
+      render();
+    } catch (e) { hlogAdd("h1b", "could not load h1b.json: " + e.message); }
+  }
+
+  // ---------- local health log (this device only; the 🩺 button shows it) ----------
+  function hlogAdd(kind, msg) {
+    const L = load("healthlog", []), last = L[L.length - 1];
+    if (last && last.k === kind && last.m === msg && Date.now() - last.t < 30 * 60000) return;   // no spam
+    L.push({ t: Date.now(), k: kind, m: msg });
+    save("healthlog", L.slice(-100));
+  }
+  const lastStats = { us: { blocked: 0, rows: 0 }, de: { blocked: 0, rows: 0 } };
+
   // ---------- data ----------
   function parseCSV(text) {
     const rows = [];
@@ -321,11 +402,32 @@
     return null;
   }
 
-  function buildJobs(csvText, targets) {
+  // The US listener writes "found_at" in US Central time (CST/CDT); the German listener writes UTC.
+  // (Before v15 the app read both as UTC, so US "found 5m ago" labels were 6 hours too old.)
+  const CHI = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit",
+    day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  function foundMs(s, acc) {
+    const m = String(s).match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    if (!m) return NaN;
+    const wall = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    if (acc === "de") return wall;
+    const off = (ms) => {                                   // Chicago wall clock minus UTC at that moment
+      const p = {};
+      for (const x of CHI.formatToParts(new Date(ms))) p[x.type] = x.value;
+      return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - ms;
+    };
+    let utc = wall - off(wall);
+    utc = wall - off(utc);                                  // second pass handles the daylight-saving edge
+    return utc;
+  }
+
+  function buildJobs(csvText, targets, acc = account) {
     const byName = new Map();
     for (const t of targets) for (const n of [t.name, ...(t.aliases || [])]) byName.set(normCompany(n), t);
     const seen = new Set(), list = [];
+    let blockedN = 0, rowsN = 0;
     for (const r of parseCSV(csvText)) {
+      rowsN++;
       const id = r.url || r.company + "|" + r.title;
       if (seen.has(id)) continue;
       seen.add(id);
@@ -334,15 +436,18 @@
       const job = {
         id, company: t ? t.name : r.company, rank: t ? t.rank : null, autostar: !!(t && t.autostar),
         flag: t && t.flag ? t.flag : "", title: r.title, role: r.role || "", location: r.location,
+        rawCompany: r.company, aliases: t ? (t.aliases || []) : [],
         type, listener: SOURCE_NAMES[type] || type, url: r.url, line: r.evidence || "",
-        tags: cleanTags(r.tags), found: r.found_at, time: Date.parse(r.found_at.replace(" ", "T") + ":00Z"),
+        tags: cleanTags(r.tags), found: r.found_at, time: foundMs(r.found_at, acc),
       };
       job.posted = parsePosted(r.posted, job.time);
-      if (blocked(job)) continue;
-      // H1B_LIST companies are known sponsors: the "track record of offering H1B" line adds nothing there
-      if (job.rank != null && TRACK_RECORD.test(job.line)) job.line = "";
+      job.blocked = blocked(job);
+      if (job.blocked) blockedN++;
+      // Jobright's own "track record of offering H1B" line is replaced by the official USCIS numbers (v15)
+      if (TRACK_RECORD.test(job.line)) job.line = "";
       list.push(job);
     }
+    lastStats[acc] = { blocked: blockedN, rows: rowsN };
     return list.sort((a, b) => b.time - a.time);
   }
 
@@ -354,14 +459,17 @@
       if (!csvRes.ok || !tRes.ok) throw new Error("HTTP " + csvRes.status + "/" + tRes.status);
       const csvText = await csvRes.text();
       const targets = (await tRes.json()).companies || [];
-      const built = buildJobs(csvText, targets), at = new Date();
+      const built = buildJobs(csvText, targets, acc), at = new Date();
       try { localStorage.setItem(cfg.cache, JSON.stringify({ csvText, targets, at: at.getTime() })); } catch (e) {}
       if (acc !== account) return;                 // switched dashboards while loading: this answer is for the other one
       jobs = built; updatedAt = at;
+      if (acc === "us" && built.length && Date.now() - built[0].time > 6 * 3600000)
+        hlogAdd("stale", "newest job in alerts.csv was found " + ago(built[0].time) + " ago");
     } catch (e) {
+      hlogAdd("fetch", acc + ": could not load jobs (" + e.message + ")");
       if (acc !== account) return;
       const c = load(cfg.cache, null);
-      if (c && !jobs.length) { jobs = buildJobs(c.csvText, c.targets); updatedAt = new Date(c.at); }
+      if (c && !jobs.length) { jobs = buildJobs(c.csvText, c.targets, acc); updatedAt = new Date(c.at); }
       if (!jobs.length) {
         if (acc === "de") { updatedAt = null; render(); return; }   // German listener not online yet: show the empty tabs
         $("list").innerHTML = '<div class="empty"><b>Could not load jobs</b>Check your internet and reopen the app.</div>';
@@ -374,7 +482,7 @@
 
   // ---------- screen ----------
   const isBlacklisted = (j) => { const b = S.blacklist[blKey(j.company)]; return !!(b && b.on); };
-  const isOpen = (j) => !itemOf(j.id).s && !isBlacklisted(j);
+  const isOpen = (j) => !itemOf(j.id).s && !isBlacklisted(j) && !j.blocked;
   const isStarred = (j) => { const st = itemOf(j.id).star; return st == null ? j.autostar : st; };
   function ago(t) {
     const min = Math.max(0, Math.round((Date.now() - t) / 60000));
@@ -399,7 +507,7 @@
   function renderTabs() {
     $("tabs").innerHTML = "";
     for (const t of TABS) {
-      const n = jobs.filter((j) => isOpen(j) && t.match(j)).length;
+      const n = jobs.filter((j) => (t.tracker || isOpen(j)) && t.match(j)).length;
       const b = document.createElement("button");
       b.className = "tab";
       b.setAttribute("role", "tab");
@@ -432,6 +540,7 @@
         "</div>" +
         '<div class="title">' + esc(j.title) + "</div>" +
         '<div class="meta">📍 ' + esc(j.location || "?") + " · 📡 " + esc(j.listener) + "</div>" +
+        uscHtml(j) +
         (j.line ? '<div class="quote">💬 "' + esc(j.line.slice(0, 220)) + '"</div>' : "") +
         (tags ? '<div class="chips">' + tags + "</div>" : "") +
         '<div class="actions">' +
@@ -446,8 +555,12 @@
 
   function renderList() {
     const tab = TABS.find((t) => t.name === current);
-    const list = jobs.filter((j) => isOpen(j) && tab.match(j));
+    if (tab.tracker) return renderTracker();
+    let list = jobs.filter((j) => isOpen(j) && tab.match(j));
     const scope = ACCOUNTS[account].scope(tab.name);
+    // Sort: newest found first, or most H-1B approvals first (USCIS 4-year total). The Jobright tab starts on H-1B order.
+    const mode = account === "us" && H1B ? load("sort_" + account + "_" + current, current === "Jobright" ? "h1b" : "new") : "new";
+    if (mode === "h1b") list = list.slice().sort((a, b) => h1bScore(b) - h1bScore(a) || b.time - a.time);
     if (!list.length) {
       const msg = tab.empty || (account === "de" && !jobs.length
         ? "No jobs yet. The German listener checks the company career pages every 15 minutes." : "");
@@ -455,11 +568,46 @@
         esc(msg || "No open " + tab.name + " jobs. " + scope + ".") + "</div>";
       return;
     }
-    let html = '<div class="note">' + scope + " · newest first</div>" + list.slice(0, shown).map(card).join("");
+    let html = '<div class="note">' + scope + " · " + (mode === "h1b" ? "most H-1B approvals first (FY23-26)" : "newest first") +
+      (account === "us" && H1B ? ' <button class="sortbtn" id="sortBtn">' + (mode === "h1b" ? "↕ Newest first" : "↕ Most H-1B first") + "</button>" : "") +
+      "</div>" + list.slice(0, shown).map(card).join("");
     if (list.length > shown) html += '<button class="btn more" id="more">Show more (' + (list.length - shown) + " left)</button>";
     $("list").innerHTML = html;
     const m = $("more");
     if (m) m.onclick = () => { shown += PAGE; renderList(); };
+    const sb = $("sortBtn");
+    if (sb) sb.onclick = () => { save("sort_" + account + "_" + current, mode === "h1b" ? "new" : "h1b"); shown = PAGE; renderList(); window.scrollTo(0, 0); };
+  }
+
+  // ---------- TRACKER: every job marked ✓ Applied, newest applied first, with a search bar ----------
+  let trackerQuery = "";
+  const appliedAt = (id) => { const it = itemOf(id); return it.at || it.t || 0; };      // "at" = the moment ✓ Applied was tapped
+  const appliedDay = (id) => new Date(appliedAt(id)).toLocaleDateString([], { month: "short", day: "numeric" });
+  function trackerCard(j) {
+    return '<article class="job" data-id="' + esc(j.id) + '">' +
+      '<div class="row1"><span class="company">' + esc(j.company) + "</span>" + (j.role ? '<span class="role">' + esc(j.role) + "</span>" : "") +
+      '<span class="applied">✓ applied ' + esc(appliedDay(j.id)) + "</span></div>" +
+      '<div class="title">' + esc(j.title) + "</div>" +
+      '<div class="meta">📍 ' + esc(j.location || "?") + " · 📡 " + esc(j.listener) + "</div>" +
+      '<div class="actions"><a class="btn apply" href="' + esc(j.url) + '" target="_blank" rel="noopener">Open job ↗</a>' +
+      '<button class="btn" data-act="reopen">↩ Not applied</button></div></article>';
+  }
+  function drawTracker() {
+    const all = jobs.filter((j) => itemOf(j.id).s === "done").sort((a, b) => appliedAt(b.id) - appliedAt(a.id));
+    const words = trackerQuery.toLowerCase().split(/\s+/).filter(Boolean);
+    const hay = (j) => [j.company, j.title, j.location, j.role, j.listener, appliedDay(j.id)].join(" ").toLowerCase();
+    const list = words.length ? all.filter((j) => words.every((w) => hay(j).includes(w))) : all;
+    $("trk-results").innerHTML = '<div class="note">' + (words.length ? list.length + " of " + all.length + " applied jobs match" : all.length + " applied jobs") +
+      " · newest applied first</div>" +
+      (list.length ? list.slice(0, 300).map(trackerCard).join("") :
+        '<div class="empty"><b>' + (all.length ? "No match" : "Nothing applied yet") + "</b>" +
+        esc(all.length ? "Try another word." : "Tap ✓ Applied on a job in any tab and it will show up here.") + "</div>");
+  }
+  function renderTracker() {
+    $("list").innerHTML = '<input id="trkq" class="trkq" type="search" placeholder="Search applied jobs (company, title, city…)" autocomplete="off" value="' +
+      esc(trackerQuery) + '"><div id="trk-results" style="display:grid;gap:10px"></div>';
+    $("trkq").oninput = (e) => { trackerQuery = e.target.value; drawTracker(); };     // only the results redraw, so typing never loses focus
+    drawTracker();
   }
 
   function render() { renderTabs(); renderList(); }
@@ -483,7 +631,14 @@
       return;
     }
     const act = btn.dataset.act;
-    setItem(id, { s: act === "done" ? "done" : "skipped" });
+    if (act === "reopen") {                                    // TRACKER: take a job back out of "applied"
+      setItem(id, { s: "" });
+      render();
+      showToast("↩ Back in your open jobs: " + job.company);
+      lastAction = null;
+      return;
+    }
+    setItem(id, act === "done" ? { s: "done", at: Date.now() } : { s: "skipped" });
     lastAction = id;
     el.classList.add("gone");
     setTimeout(render, 250);
@@ -773,6 +928,54 @@
     return sub && mine && mine.on ? "ON for this device" : "off";
   }
 
+  // ---------- 🩺 health check ----------
+  // Left: what THIS app shows per tab (live, from the data it just loaded). Right: the watchman report that runs on GitHub
+  // every 30 minutes (watchman.py in JOB-LISTENER) and checks the lists, sources and companies.
+  async function openHealth() {
+    const day = 864e5;
+    const rows = TABS.map((t) => {
+      const all = jobs.filter(t.match), open = t.tracker ? all : all.filter(isOpen);
+      const mine = t.tracker ? 0 : all.filter((j) => itemOf(j.id).s).length, bl = t.tracker ? 0 : all.filter(isBlacklisted).length;
+      const newest = all.length ? ago(Math.max(...all.map((j) => j.time))) : "-";
+      return "<tr><td>" + esc(t.name) + '</td><td class="n"><b>' + open.length + '</b></td><td class="n">' + all.filter((j) => Date.now() - j.time < day).length +
+        '</td><td class="n">' + (mine + bl) + "</td><td>" + newest + "</td></tr>";
+    }).join("");
+    let html = "<h2>🩺 Health check</h2><p>Is every tab getting jobs? " + (updatedAt ? "Data loaded " + hhmm(updatedAt) + "." : "") + "</p>" +
+      '<table class="hl"><tr><th>Tab</th><th class="n">Shown</th><th class="n">New 24h</th><th class="n">Hidden by you</th><th>Newest</th></tr>' + rows + "</table>" +
+      "<p>Hidden by the sponsorship filter (job text says no sponsorship): <b>" + lastStats[account].blocked + "</b> of " + lastStats[account].rows + " alerts.<br>" +
+      "<i>Hidden by you</i> = ✓ Applied, ✕ Skip and 🚫 blacklisted companies.</p>";
+    if (account === "us") {
+      let wm = null;
+      try { const r = await fetch(WATCHMAN_URL, { cache: "no-store" }); if (r.ok) wm = await r.json(); } catch (e) {}
+      if (!wm) {
+        html += '<h3 style="margin:10px 0 4px;font-size:15px">👁 Watchman</h3><p>No report online yet. It runs on GitHub every 30 minutes once it is switched on (see watchman.py).</p>';
+      } else {
+        const ageM = Math.round((Date.now() - Date.parse(wm.at)) / 60000);
+        html += '<h3 style="margin:10px 0 4px;font-size:15px">👁 Watchman · <span class="pill ' + (wm.status === "ok" ? "ok" : "bad") + '">' +
+          (wm.status === "ok" ? "all OK" : wm.problems.length + " to check") + "</span></h3>" +
+          "<p>Report " + ageM + " min old · listener last ran " + wm.listener_last_run_min + " min before it.</p>";
+        if (wm.problems.length) html += "<p>" + wm.problems.map((x) => "⚠️ " + esc(x)).join("<br>") + "</p>";
+        const ls = Object.entries(wm.lists || {}).map(([n, c]) => c.error ? "<tr><td>" + esc(n) + '</td><td colspan="3">' + esc(c.error) + "</td></tr>" :
+          "<tr><td>" + esc(n) + '</td><td class="n">' + c.active + '</td><td class="n">' + (c.alert + c.drop + c.dup + c.seed) + '</td><td class="n"><b>' + c.unknown + "</b></td></tr>").join("");
+        html += '<table class="hl"><tr><th>Job list</th><th class="n">Live jobs</th><th class="n">Known</th><th class="n">Never seen</th></tr>' + ls + "</table>";
+        const up = Object.entries(wm.upstream_min || {}).map(([n, m]) => esc(n) + " " + (m == null ? "?" : m + "m")).join(" · ");
+        html += "<p>How old each list is (we can only be as fast as these): " + up + "</p>";
+        const silent = (wm.targets || []).filter((t) => t.alerts_7d === 0);
+        html += "<p>H1B_LIST companies with no alert in 7 days: <b>" + silent.length + "</b> of " + (wm.targets || []).length +
+          " (" + silent.filter((t) => t.kind === "list only").length + " only come from the lists, " +
+          silent.filter((t) => t.feed_down.length).length + " have a feed that is down).</p>";
+      }
+    }
+    const L = load("healthlog", []).slice(-8).reverse();
+    html += '<h3 style="margin:10px 0 4px;font-size:15px">📒 Problems seen on this device</h3>' +
+      (L.length ? L.map((e) => '<p class="hlog">' + new Date(e.t).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) + " · " + esc(e.m) + "</p>").join("") : "<p>None yet 👍</p>") +
+      '<div class="stack"><button class="btn" id="hl-refresh">Reload jobs now</button><button class="btn" id="hl-close">Close</button></div>';
+    openSheet(html);
+    $("hl-close").onclick = closeSheet;
+    $("hl-refresh").onclick = () => { closeSheet(); refresh(); };
+  }
+  $("hlBtn").onclick = () => openHealth();
+
   // ---------- settings sheet ----------
   async function openSettings(msg) {
     const ps = await pushStatus();
@@ -825,6 +1028,7 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(); });
 
   refresh();
+  loadH1B();
   setInterval(refresh, REFRESH_MS);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
 

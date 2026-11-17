@@ -1,0 +1,298 @@
+{
+ "map": {
+  "Walmart": [
+   "WAL MART",
+   "WALMART"
+  ],
+  "Deloitte": [
+   "DELOITTE"
+  ],
+  "EY": [
+   "ERNST YOUNG",
+   "ERNST AND YOUNG"
+  ],
+  "JPMorgan Chase": [
+   "JPMORGAN"
+  ],
+  "Bank of America": [
+   "BANK OF AMERICA"
+  ],
+  "Tata Consultancy Services": [
+   "TATA CONSULTANCY"
+  ],
+  "Fidelity": [
+   "=FIDELITY",
+   "FIDELITY INVESTMENTS",
+   "FIDELITY BROKERAGE",
+   "FIDELITY WORKPLACE",
+   "FIDELITY MANAGEMENT",
+   "FMR"
+  ],
+  "Citi": [
+   "CITIBANK",
+   "CITIGROUP",
+   "CITICORP"
+  ],
+  "Dell": [
+   "DELL"
+  ],
+  "AMD": [
+   "ADVANCED MICRO DEVICES"
+  ],
+  "Visa": [
+   "VISA U S A",
+   "VISA TECHNOLOGY",
+   "=VISA"
+  ],
+  "Verizon": [
+   "VERIZON"
+  ],
+  "Cadence": [
+   "CADENCE DESIGN"
+  ],
+  "Two Sigma": [
+   "TWO SIGMA"
+  ],
+  "D. E. Shaw": [
+   "D E SHAW"
+  ],
+  "Randstad": [
+   "RANDSTAD"
+  ],
+  "U.S. Bank": [
+   "U S BANK",
+   "US BANK",
+   "U S BANCORP"
+  ],
+  "Mastech Digital": [
+   "MASTECH"
+  ],
+  "ByteDance/TikTok": [
+   "BYTEDANCE",
+   "TIKTOK",
+   "BD TIKTOK"
+  ],
+  "McKinsey & Company": [
+   "MCKINSEY"
+  ],
+  "CVS Health": [
+   "CVS"
+  ],
+  "CGI": [
+   "CGI TECHNOLOGIES"
+  ],
+  "UnitedHealth Group": [
+   "UNITEDHEALTH",
+   "UNITED HEALTH",
+   "OPTUM"
+  ],
+  "Samsung": [
+   "SAMSUNG"
+  ],
+  "HPE": [
+   "HEWLETT PACKARD ENTERPRISE"
+  ],
+  "Atos": [
+   "ATOS"
+  ],
+  "PwC": [
+   "PRICEWATERHOUSECOOPERS"
+  ],
+  "Amazon": [
+   "AMAZON"
+  ],
+  "Meta": [
+   "=META",
+   "META PLATFORMS",
+   "FACEBOOK"
+  ],
+  "Google": [
+   "GOOGLE"
+  ],
+  "Microsoft": [
+   "MICROSOFT"
+  ],
+  "Apple": [
+   "=APPLE"
+  ],
+  "Alphabet": [
+   "GOOGLE"
+  ],
+  "AWS": [
+   "AMAZON WEB"
+  ],
+  "Amazon Web Services": [
+   "AMAZON WEB"
+  ],
+  "ATT": [
+   "AT AND T"
+  ],
+  "Automatic Data Processing": [
+   "ADP"
+  ],
+  "Accenture Federal Services": [
+   "ACCENTURE FEDERAL"
+  ],
+  "Capgemini Engineering": [
+   "CAPGEMINI"
+  ],
+  "Capgemini Invent": [
+   "CAPGEMINI"
+  ],
+  "BCG X": [
+   "BOSTON CONSULTING"
+  ],
+  "BCG Platinion": [
+   "BOSTON CONSULTING"
+  ],
+  "BCG": [
+   "BOSTON CONSULTING"
+  ],
+  "Boston Consulting Group": [
+   "BOSTON CONSULTING"
+  ],
+  "Cognizant Technology Solutions": [
+   "COGNIZANT"
+  ],
+  "Meta Platforms": [
+   "=META",
+   "META PLATFORMS",
+   "FACEBOOK"
+  ],
+  "Facebook": [
+   "=META",
+   "META PLATFORMS",
+   "FACEBOOK"
+  ],
+  "Bank of America Merrill Lynch": [
+   "BANK OF AMERICA"
+  ],
+  "John Deere": [
+   "DEERE"
+  ],
+  "Electronic Arts (EA)": [
+   "ELECTRONIC ARTS"
+  ],
+  "Hewlett Packard (HP)": [
+   "HP",
+   "HEWLETT PACKARD"
+  ],
+  "International Business Machines": [
+   "IBM"
+  ],
+  "JP Morgan": [
+   "JPMORGAN"
+  ],
+  "J.P. Morgan": [
+   "JPMORGAN"
+  ],
+  "JP Morgan Chase": [
+   "JPMORGAN"
+  ],
+  "Snapchat": [
+   "SNAP"
+  ],
+  "Lucid Motors": [
+   "LUCID"
+  ],
+  "KLA-Tencor": [
+   "KLA"
+  ],
+  "Schwab": [
+   "CHARLES SCHWAB"
+  ],
+  "McKinsey": [
+   "MCKINSEY"
+  ],
+  "HCLTech": [
+   "HCL"
+  ],
+  "LTI Mindtree": [
+   "LTIMINDTREE",
+   "LARSEN AND TOUBRO INFOTECH"
+  ],
+  "Discover Financial": [
+   "DISCOVER"
+  ],
+  "DE Shaw": [
+   "D E SHAW"
+  ],
+  "Syntel": [
+   "SYNTEL",
+   "ATOS SYNTEL"
+  ],
+  "Tableau": [
+   "TABLEAU"
+  ],
+  "Slack": [
+   "SLACK"
+  ],
+  "Sam's Club": [
+   "WAL MART",
+   "WALMART"
+  ],
+  "NXP Semiconductors": [
+   "NXP"
+  ],
+  "Nissan Motor Corporation": [
+   "NISSAN"
+  ],
+  "PACCAR Parts": [
+   "PACCAR"
+  ],
+  "Panera Bread": [
+   "PANERA"
+  ],
+  "Staples Canada": [
+   "STAPLES"
+  ],
+  "Verizon Communications": [
+   "VERIZON"
+  ],
+  "Schweitzer Engineering Laboratories (SEL)": [
+   "SCHWEITZER ENGINEERING LABORATORIES"
+  ],
+  "Welltower\u2122 Inc. (NYSE:WELL)": [
+   "WELLTOWER"
+  ],
+  "Western Alliance Bancorporation": [
+   "WESTERN ALLIANCE BANK"
+  ],
+  "Intermountain Healthcare": [
+   "INTERMOUNTAIN HEALTH"
+  ],
+  "The Options Clearing Corporation (OCC)": [
+   "OPTIONS CLEARING"
+  ],
+  "Arthur J. Gallagher & Co.": [
+   "ARTHUR J GALLAGHER"
+  ],
+  "Cincinnati Children\u2019s Hospital and Medical Center": [
+   "CINCINNATI CHILDRENS HOSPITAL",
+   "CINCINNATI CHILDREN S HOSPITAL"
+  ],
+  "Toshiba Commerce Solutions": [
+   "TOSHIBA GLOBAL COMMERCE"
+  ],
+  "Progress Rail, A Caterpillar Company": [
+   "PROGRESS RAIL"
+  ],
+  "SharkNinja France": [
+   "SHARKNINJA"
+  ],
+  "First Citizens BancShares": [
+   "FIRST CITIZENS BANK"
+  ],
+  "First Citizens Wealth": [
+   "FIRST CITIZENS BANK"
+  ],
+  "Envista Forensics": [
+   "ENVISTA"
+  ],
+  "Valley Children's Healthcare": [
+   "VALLEY CHILDRENS",
+   "VALLEY CHILDREN S"
+  ]
+ },
+ "never_match": []
+}
