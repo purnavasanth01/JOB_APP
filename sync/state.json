@@ -360,6 +360,11 @@
    "s": "done",
    "star": null,
    "t": 1794882537008
+  },
+  "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/job/210807923": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794882577374
   }
  },
  "blacklist": {
