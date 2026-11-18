@@ -481,6 +481,157 @@
    "s": "skipped",
    "star": null,
    "t": 1794970712894
+  },
+  "https://jobright.ai/jobs/info/6ad7b96952aa6152bb69eb3c": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970715060
+  },
+  "https://jobright.ai/jobs/info/6afba45406c0aac84dd97c44": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970716511
+  },
+  "https://jobright.ai/jobs/info/6afc8fb13786d28f2145a2eb": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970718394
+  },
+  "https://jobright.ai/jobs/info/6afc1d177df9c4ceafeb86eb": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970719311
+  },
+  "https://jobright.ai/jobs/info/6afb186d04af1c9f075c3d36": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970720644
+  },
+  "https://jobright.ai/jobs/info/6aa3e1c4f3aa936e2cdae6aa": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970721527
+  },
+  "https://jobright.ai/jobs/info/6af5c6def10ae27369e137f6": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970722311
+  },
+  "https://jobright.ai/jobs/info/6aa4f910a77a53f5a156ed56": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970723011
+  },
+  "https://jobright.ai/jobs/info/6adfa1649a8c91d5c35877fb": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970723744
+  },
+  "https://jobright.ai/jobs/info/6ae0b38e1f9d9308370a30b2": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970724477
+  },
+  "https://jobright.ai/jobs/info/6afb81cec2bd7db01b8822b8": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970725127
+  },
+  "https://jobright.ai/jobs/info/6afc9f42d86c15318a38c7fb": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970725777
+  },
+  "https://jobright.ai/jobs/info/6ae3d028d45dc30fb7d2cc60": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970726310
+  },
+  "https://jobright.ai/jobs/info/6af51dfc1b2c5dcbbcd66b95": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970726827
+  },
+  "https://jobright.ai/jobs/info/6afb0d31317abe715a26025f": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970727511
+  },
+  "https://jobright.ai/jobs/info/6af78f11c7349029d70970bf": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970728094
+  },
+  "https://jobright.ai/jobs/info/6afb8a7db2e06df257975784": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970728711
+  },
+  "https://jobright.ai/jobs/info/6af05e88676e3f91d326f24b": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970729294
+  },
+  "https://jobright.ai/jobs/info/6af7563bd0eefb7d11b8b54c": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970729877
+  },
+  "https://jobright.ai/jobs/info/6aa8aabe3387a3d9b67d243b": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970730394
+  },
+  "https://jobright.ai/jobs/info/6afcef9ad163750294928501": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970730961
+  },
+  "https://jobright.ai/jobs/info/6afb05897f9ead6668e9d9bc": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970731527
+  },
+  "https://jobright.ai/jobs/info/6abed9e68ff3fb9b3bc764a0": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970732027
+  },
+  "https://jobright.ai/jobs/info/6abed9ebd9621c5b28391e63": {
+   "s": "done",
+   "star": null,
+   "t": 1794970732660,
+   "at": 1794970732660
+  },
+  "https://jobright.ai/jobs/info/6aa3b3ec4238ea18d430d91a": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970734410
+  },
+  "https://jobright.ai/jobs/info/6af7dbff42ae65e2c8f399a4": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970735611
+  },
+  "https://jobright.ai/jobs/info/6af77058e3d8d612bf4235eb": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970736360
+  },
+  "https://jobright.ai/jobs/info/6a84f407e459fa3baa861666": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970737077
+  },
+  "https://jobright.ai/jobs/info/6afcdcbbe8a9612f4e0dc7d0": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970737777
+  },
+  "https://jobright.ai/jobs/info/6afcd477d16375029492722f": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794970742094
   }
  },
  "blacklist": {
