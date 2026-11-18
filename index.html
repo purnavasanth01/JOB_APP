@@ -173,11 +173,12 @@
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v16 · TRACKER tab (applied jobs + search), USCIS H-1B numbers, 🩺 health check · 2026-11-17";
+  const VERSION = "v17 · hide companies with under 20 USCIS H-1B approvals every year, TRACKER tab, USCIS numbers · 2026-11-17";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const H1B_URL = "h1b.json";                                  // official USCIS numbers, built by tools/build_h1b.py
   const WATCHMAN_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/watchman/watchman.json";
+  const MIN_H1B = 20;                 // hide a company if USCIS shows fewer than this many approvals in EVERY year (FY23-26)
   const START = "2026-11-11";          // tabs show jobs found on/after this date (UTC); ALL shows everything
   const PAGE = 100;                    // cards drawn at a time ("Show more" adds more)
   const REFRESH_MS = 3 * 60 * 1000;    // re-read the job list every 3 minutes while the app is open
@@ -482,7 +483,10 @@
 
   // ---------- screen ----------
   const isBlacklisted = (j) => { const b = S.blacklist[blKey(j.company)]; return !!(b && b.on); };
-  const isOpen = (j) => !itemOf(j.id).s && !isBlacklisted(j) && !j.blocked;
+  // Small sponsors: USCIS has a record for the company but its best year is under MIN_H1B. No USCIS record = keep the job
+  // (we cannot tell). Never applies to the Germany dashboard, and the TRACKER always shows applied jobs.
+  const lowH1B = (j) => { const v = account === "us" ? uscis(j) : null; return !!v && Math.max(...v.map((y) => y[0])) < MIN_H1B; };
+  const isOpen = (j) => !itemOf(j.id).s && !isBlacklisted(j) && !j.blocked && !lowH1B(j);
   const isStarred = (j) => { const st = itemOf(j.id).star; return st == null ? j.autostar : st; };
   function ago(t) {
     const min = Math.max(0, Math.round((Date.now() - t) / 60000));
@@ -943,6 +947,8 @@
     let html = "<h2>🩺 Health check</h2><p>Is every tab getting jobs? " + (updatedAt ? "Data loaded " + hhmm(updatedAt) + "." : "") + "</p>" +
       '<table class="hl"><tr><th>Tab</th><th class="n">Shown</th><th class="n">New 24h</th><th class="n">Hidden by you</th><th>Newest</th></tr>' + rows + "</table>" +
       "<p>Hidden by the sponsorship filter (job text says no sponsorship): <b>" + lastStats[account].blocked + "</b> of " + lastStats[account].rows + " alerts.<br>" +
+      "Hidden because USCIS shows under " + MIN_H1B + " H-1B approvals in every year: <b>" + jobs.filter((j) => lowH1B(j) && !itemOf(j.id).s && !isBlacklisted(j) && !j.blocked).length + "</b> jobs (" +
+      (H1B ? "company not in USCIS data = kept" : "USCIS numbers not loaded") + ").<br>" +
       "<i>Hidden by you</i> = ✓ Applied, ✕ Skip and 🚫 blacklisted companies.</p>";
     if (account === "us") {
       let wm = null;
