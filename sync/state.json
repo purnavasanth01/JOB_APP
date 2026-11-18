@@ -1130,6 +1130,12 @@
    "s": "skipped",
    "star": null,
    "t": 1795019837886
+  },
+  "https://hdpc.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/LateralHiring/job/189373": {
+   "s": "done",
+   "star": null,
+   "t": 1795019939550,
+   "at": 1795019939550
   }
  },
  "blacklist": {
