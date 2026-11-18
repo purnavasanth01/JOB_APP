@@ -1,15 +1,15 @@
 {
  "v": 1,
  "items": {
-  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
-   "s": "done",
-   "star": null,
-   "t": 1794438554464
-  },
   "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
    "s": "skipped",
    "star": null,
    "t": 1794438323132
+  },
+  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
+   "s": "done",
+   "star": null,
+   "t": 1794438554464
   },
   "https://jobright.ai/jobs/info/6af4d2f6cd7be4db20d88c4d": {
    "s": "skipped",
@@ -1141,6 +1141,11 @@
    "s": "skipped",
    "star": null,
    "t": 1795020052730
+  },
+  "https://statestreet.wd1.myworkdayjobs.com/Global/job/Austin-Texas/AI-Security---Cybersecurity--Technology-Intern---Full-time-Internship--Jan--June-2027-_R-801284": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795024363928
   }
  },
  "blacklist": {
