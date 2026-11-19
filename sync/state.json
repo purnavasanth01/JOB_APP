@@ -1,15 +1,15 @@
 {
  "v": 1,
  "items": {
-  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
-   "s": "done",
-   "star": null,
-   "t": 1794438554464
-  },
   "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
    "s": "skipped",
    "star": null,
    "t": 1794438323132
+  },
+  "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
+   "s": "done",
+   "star": null,
+   "t": 1794438554464
   },
   "https://jobright.ai/jobs/info/6af4d2f6cd7be4db20d88c4d": {
    "s": "skipped",
@@ -1177,6 +1177,11 @@
    "star": null,
    "t": 1795039775477,
    "at": 1795039775477
+  },
+  "https://apply.careers.microsoft.com/careers/job/1970393557075527": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795050356226
   }
  },
  "blacklist": {
