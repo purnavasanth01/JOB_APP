@@ -128,6 +128,10 @@
   .trkq { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
     color: var(--text); font: inherit; font-size: 15px; }
   .trkq:focus { outline: 2px solid var(--accent); }
+  .searchwrap { max-width: 720px; margin: 0 auto; padding: 12px 16px 0; }
+  .searchwrap[hidden], .syncbar[hidden] { display: none; }
+  .syncbar { max-width: 688px; width: calc(100% - 32px); margin: 10px auto 0; padding: 9px 12px; border-radius: 10px;
+    background: var(--warn-soft); color: var(--warn); font-size: 13px; line-height: 1.35; cursor: pointer; }
   .applied { margin-left: auto; flex: none; white-space: nowrap; font-size: 12px; color: var(--ok); font-weight: 600; }
   .usc { margin-top: 5px; font-size: 12px; color: var(--muted); }
   .usc .uh { font-weight: 700; color: var(--text); }
@@ -167,13 +171,15 @@
   </div>
   <nav class="tabs" role="tablist" id="tabs"></nav>
 </header>
+<div class="syncbar" id="syncbar" hidden></div>
+<div class="searchwrap" id="searchwrap" hidden><input id="allq" class="trkq" type="search" placeholder="Search all jobs (company, title, city, source…)" autocomplete="off"></div>
 <main id="list"></main>
 <footer>Version <span id="ver"></span></footer>
 <div class="toast" id="toast"><span id="toastText"></span><button id="undo">UNDO</button></div>
 <div class="overlay" id="overlay"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
 
 <script>
-  const VERSION = "v17 · hide companies with under 20 USCIS H-1B approvals every year, TRACKER tab, USCIS numbers · 2026-11-17";
+  const VERSION = "v18 · ALL-tab search, \"not saving\" warning bar, sync every 15 s · 2026-11-20";
   const ALERTS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/state/alerts.csv";
   const TARGETS_URL = "https://raw.githubusercontent.com/purnavasanth01/JOB-LISTENER/main/targets.json";
   const H1B_URL = "h1b.json";                                  // official USCIS numbers, built by tools/build_h1b.py
@@ -200,7 +206,7 @@
         { name: "Greenhouse", match: (j) => recent(j) && j.type === "greenhouse" },
         { name: "Simplify", match: (j) => recent(j) && (j.type === "simplify" || j.type === "vansh") },
         { name: "TRACKER", tracker: true, match: (j) => itemOf(j.id).s === "done" },   // every job marked ✓ Applied, with a search bar
-        { name: "ALL", match: (j) => !isDE(j) },
+        { name: "ALL", search: true, match: (j) => !isDE(j) },
       ],
     },
     de: {
@@ -212,7 +218,7 @@
         { name: "Indeed", match: (j) => j.type === "indeed", empty: DE_EMPTY },
         { name: "Glassdoor", match: (j) => j.type === "glassdoor", empty: DE_EMPTY },
         { name: "LinkedIn", match: (j) => j.type === "linkedin", empty: DE_EMPTY },
-        { name: "ALL", match: () => true },
+        { name: "ALL", search: true, match: () => true },
       ],
     },
   };
@@ -557,10 +563,20 @@
     );
   }
 
+  // ALL-tab search: company (and its other names), title, city, role, source, tags. Every typed word must be found.
+  let allQuery = "";
+  const searchWords = () => allQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  const jobHay = (j) => j.hay || (j.hay = [j.company, j.rawCompany, ...j.aliases, j.title, j.location, j.role, j.listener, j.type, j.flag, ...j.tags]
+    .join(" ").toLowerCase());
+  $("allq").oninput = (e) => { allQuery = e.target.value; shown = PAGE; renderList(); };
+
   function renderList() {
     const tab = TABS.find((t) => t.name === current);
+    $("searchwrap").hidden = !tab.search;                      // the search box (ALL tab) lives outside #list, so typing never loses focus
     if (tab.tracker) return renderTracker();
     let list = jobs.filter((j) => isOpen(j) && tab.match(j));
+    const total = list.length, words = tab.search ? searchWords() : [];
+    if (words.length) list = list.filter((j) => words.every((w) => jobHay(j).includes(w)));     // every word must match
     const scope = ACCOUNTS[account].scope(tab.name);
     // Sort: newest found first, or most H-1B approvals first (USCIS 4-year total). The Jobright tab starts on H-1B order.
     const mode = account === "us" && H1B ? load("sort_" + account + "_" + current, current === "Jobright" ? "h1b" : "new") : "new";
@@ -568,11 +584,13 @@
     if (!list.length) {
       const msg = tab.empty || (account === "de" && !jobs.length
         ? "No jobs yet. The German listener checks the company career pages every 15 minutes." : "");
-      $("list").innerHTML = '<div class="empty"><b>' + (msg ? "Nothing here yet" : "All caught up 🎉") + "</b>" +
-        esc(msg || "No open " + tab.name + " jobs. " + scope + ".") + "</div>";
+      $("list").innerHTML = words.length
+        ? '<div class="empty"><b>No match</b>None of the ' + total + " open jobs match “" + esc(allQuery.trim()) + "”. Try fewer or other words.</div>"
+        : '<div class="empty"><b>' + (msg ? "Nothing here yet" : "All caught up 🎉") + "</b>" +
+          esc(msg || "No open " + tab.name + " jobs. " + scope + ".") + "</div>";
       return;
     }
-    let html = '<div class="note">' + scope + " · " + (mode === "h1b" ? "most H-1B approvals first (FY23-26)" : "newest first") +
+    let html = '<div class="note">' + (words.length ? list.length + " of " + total + " jobs match · " : "") + scope + " · " + (mode === "h1b" ? "most H-1B approvals first (FY23-26)" : "newest first") +
       (account === "us" && H1B ? ' <button class="sortbtn" id="sortBtn">' + (mode === "h1b" ? "↕ Newest first" : "↕ Most H-1B first") + "</button>" : "") +
       "</div>" + list.slice(0, shown).map(card).join("");
     if (list.length > shown) html += '<button class="btn more" id="more">Show more (' + (list.length - shown) + " left)</button>";
@@ -791,9 +809,10 @@
   // READS the shared state (public file), but cannot save.
   const REPO = "purnavasanth01/JOB_APP", BRANCH = "data", PATH = "sync/state.json";
   const API = "https://api.github.com/repos/" + REPO;
-  const SAVE_DELAY_MS = 5000, SYNC_MS = 30000;
+  const SAVE_DELAY_MS = 5000, SYNC_MS = 15000;     // save 5 s after the last tap; look for the other device's taps every 15 s
   let token = load("gh_token", "");
   let remoteSha = null, saveTimer = null, syncing = false, syncState = "idle", syncNote = "";
+  let rev = 0, lastSynced = load("last_synced", 0);   // rev counts local taps; lastSynced = last time this device and GitHub agreed
   let deviceId = load("device_id", "");
   if (!deviceId) { deviceId = Math.random().toString(36).slice(2, 10); save("device_id", deviceId); }
 
@@ -801,7 +820,7 @@
   const b64dec = (b) => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, "")), (c) => c.charCodeAt(0)));
 
   function changed() {                       // called after every local change
-    S.dirty = true;
+    S.dirty = true; rev++;
     save("appstate", S);
     setSync("saving");
     clearTimeout(saveTimer);
@@ -813,7 +832,13 @@
     const icon = { idle: "☁️", ok: "☁️", saving: "⏳", error: "⚠️", readonly: "🔒" }[st] || "☁️";
     $("syncBtn").textContent = icon;
     $("syncBtn").title = note || st;
+    // A device that cannot save is the #1 reason "my other device does not show my ✓ / ✕": say it loudly, not only with a small icon.
+    const bar = $("syncbar");
+    bar.hidden = !(st === "readonly" || st === "error");
+    if (st === "readonly") bar.innerHTML = "🔒 <b>This device is NOT saving.</b> Your ✓ Applied and ✕ Skip taps stay only on this device, so your other device will not see them. Tap here to add the GitHub token.";
+    if (st === "error") bar.innerHTML = "⚠️ <b>Sync problem:</b> " + esc(note || "unknown") + ". Your latest taps may not be saved to the cloud yet. Tap here for details.";
   }
+  const markSynced = () => { lastSynced = Date.now(); save("last_synced", lastSynced); };
 
   function mergeSection(a, b) {              // newer t wins, key by key
     const out = { ...(a || {}) };
@@ -865,8 +890,9 @@
         S = { ...merged, dirty: S.dirty };
         if (localChanged) render();
         if (!token) { save("appstate", S); setSync("readonly", "Read-only: add your GitHub token in ⚙️ to save"); return; }
-        if (!S.dirty && remote && same(merged, remote)) { save("appstate", S); setSync("ok", "Synced"); return; }
+        if (!S.dirty && remote && same(merged, remote)) { save("appstate", S); markSynced(); setSync("ok", "Synced"); return; }
         if (!remote) await ensureBranch();
+        const myRev = rev;                                           // a tap made while we are saving must NOT be marked as saved
         const body = { message: "[CHORE] Sync app state from " + deviceName(), branch: BRANCH,
           content: b64enc(JSON.stringify(merge(S, {}), null, 1)), ...(sha ? { sha } : {}) };
         const r = await fetch(API + "/contents/" + PATH, { method: "PUT", cache: "no-store",
@@ -875,9 +901,11 @@
         if (r.status === 409 || r.status === 422) continue;          // someone else saved first: merge again
         if (!r.ok) throw new Error("GitHub " + r.status + (r.status === 401 ? " (token wrong or expired)" : r.status === 403 ? " (token has no write access)" : ""));
         remoteSha = (await r.json()).content.sha;
-        S.dirty = false;
+        S.dirty = rev !== myRev;
         save("appstate", S);
-        setSync("ok", "Synced");
+        markSynced();
+        setSync(S.dirty ? "saving" : "ok", S.dirty ? "Saving…" : "Synced");
+        if (S.dirty) { clearTimeout(saveTimer); saveTimer = setTimeout(syncNow, 1500); }
         return;
       }
       throw new Error("could not save after 3 tries");
@@ -990,7 +1018,10 @@
       "<h2>⚙️ Settings</h2>" +
       (msg ? '<p style="color:var(--warn)">' + esc(msg) + "</p>" : "") +
       "<h3 style=\"margin:12px 0 4px;font-size:15px\">☁️ Sync between devices</h3>" +
-      "<p>Status: " + esc(syncNote || syncState) + "<br>This device: " + esc(deviceName()) + " · " + esc(deviceId) + "</p>" +
+      "<p>Status: " + esc(syncNote || syncState) + "<br>Token on this device: " + (token ? "✅ yes" : "❌ NO (cannot save)") +
+      "<br>Last synced: " + (lastSynced ? esc(hhmm(new Date(lastSynced))) + " (" + esc(ago(lastSynced)) + " ago)" : "never") +
+      " · Taps waiting to be saved: " + (S.dirty ? "⏳ yes" : "✅ none") +
+      "<br>This device: " + esc(deviceName()) + " · " + esc(deviceId) + "</p>" +
       '<div class="stack">' +
         '<input id="tok" type="password" autocomplete="off" placeholder="GitHub token (github_pat_…)" value="' + esc(token) + '" ' +
         'style="padding:10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit">' +
@@ -1025,13 +1056,17 @@
   }
   $("setBtn").onclick = () => openSettings();
   $("syncBtn").onclick = () => openSettings();
+  $("syncbar").onclick = () => openSettings();
 
   if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", (e) => { if (e.data === "refresh") refresh(); });
 
   setSync(token ? "idle" : "readonly");
   syncNow();
   setInterval(() => { if (!document.hidden) syncNow(); }, SYNC_MS);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(); });
+  // leaving the app / closing the tab with unsaved taps: try to save right now instead of waiting for the 5 s timer
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) syncNow(); else if (S.dirty && token) syncNow(); });
+  window.addEventListener("pagehide", () => { if (S.dirty && token) syncNow(); });
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}   // ask the browser not to wipe this app's saved data
 
   refresh();
   loadH1B();
