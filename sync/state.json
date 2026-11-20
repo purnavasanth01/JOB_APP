@@ -1,15 +1,15 @@
 {
  "v": 1,
  "items": {
-  "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
-   "s": "skipped",
-   "star": null,
-   "t": 1794438323132
-  },
   "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
    "s": "done",
    "star": null,
    "t": 1794438554464
+  },
+  "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794438323132
   },
   "https://jobright.ai/jobs/info/6af4d2f6cd7be4db20d88c4d": {
    "s": "skipped",
@@ -1407,10 +1407,109 @@
    "star": null,
    "t": 1795059253130
   },
+  "https://kla.wd1.myworkdayjobs.com/Search/job/Austin-TX/Software-Application-Engineer-Intern_2643260-1": {
+   "s": "done",
+   "star": null,
+   "t": 1795112935564,
+   "at": 1795112935564
+  },
+  "https://apply.careers.microsoft.com/careers/job/1970393557076095": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795116009558
+  },
+  "https://kla.wd1.myworkdayjobs.com/Search/job/Milpitas-CA/Product-Development-Engineer-Intern_2643570-1": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795119636372
+  },
+  "https://hpe.wd5.myworkdayjobs.com/jobsathpe/job/Sunnyvale-California/AI-Engineering-Technical-Intern_1218702": {
+   "s": "done",
+   "star": null,
+   "t": 1795121226569,
+   "at": 1795121226569
+  },
+  "https://apply.careers.microsoft.com/careers/job/1970393557076142": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795122039887
+  },
+  "https://jobright.ai/jobs/info/6ae223516679108488c47e75": {
+   "s": "done",
+   "star": null,
+   "t": 1795123279220,
+   "at": 1795123279220
+  },
+  "https://tmobile.wd1.myworkdayjobs.com/External/job/Atlanta-Georgia/Summer-2027-AI-Engineering-Internship---Site-Reliability---Automation_REQ383239": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795123285219
+  },
+  "https://jobs.ashbyhq.com/snowflake/0223923d-4f0f-44e6-9649-0d1a9eda950d": {
+   "s": "done",
+   "star": null,
+   "t": 1795125478590,
+   "at": 1795125478590
+  },
+  "https://jobs.ashbyhq.com/snowflake/185d165c-09c7-4b57-9281-ff7c2c541907": {
+   "s": "done",
+   "star": null,
+   "t": 1795125480239,
+   "at": 1795125480239
+  },
+  "https://jobs.ashbyhq.com/snowflake/e194759e-3a20-47c9-868d-f47179613897": {
+   "s": "done",
+   "star": null,
+   "t": 1795125816738,
+   "at": 1795125816738
+  },
+  "https://apply.careers.microsoft.com/careers/job/1970393557076159": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795131923388
+  },
+  "https://jobs.smartrecruiters.com/LinkedIn3/744000162628808": {
+   "s": "done",
+   "star": null,
+   "t": 1795137539199,
+   "at": 1795137539199
+  },
   "https://efds.fa.em5.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/74636": {
    "s": "skipped",
    "star": null,
    "t": 1795150397489
+  },
+  "https://hpe.wd5.myworkdayjobs.com/jobsathpe/job/Milpitas-California-United-States-of-America/HPE-Labs---Business-Analyst-Intern---AI-and-Data-Science_1217924": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795138587102
+  },
+  "https://jobright.ai/jobs/info/6aa827733a9f0a4fe6f179c0": {
+   "s": "done",
+   "star": null,
+   "t": 1795142329933,
+   "at": 1795142329933
+  },
+  "https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Finance-AI-Engineering-Intern---Summer-2027_JR2029131": {
+   "s": "done",
+   "star": null,
+   "t": 1795143510231,
+   "at": 1795143510230
+  },
+  "https://cisco.wd5.myworkdayjobs.com/cisco_careers/job/San-Francisco-California-US/AI-Researcher-II--Intern----United-States_2032589": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795143954820
+  },
+  "https://www.mongodb.com/careers/job/?gh_jid=8346138": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795143966370
+  },
+  "https://cadence.wd1.myworkdayjobs.com/Univ_Careers/job/SAN-JOSE/Software-Engineering-Intern---Circuit-Simulation-infrastructure_R57254": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795192404340
   }
  },
  "blacklist": {
