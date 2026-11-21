@@ -1,15 +1,15 @@
 {
  "v": 1,
  "items": {
-  "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
-   "s": "skipped",
-   "star": null,
-   "t": 1794438323132
-  },
   "https://jobright.ai/jobs/info/6a701a26160eda5948e8d48c": {
    "s": "done",
    "star": null,
    "t": 1794438554464
+  },
+  "https://jobright.ai/jobs/info/6af4b2252278454e18c37a2e": {
+   "s": "skipped",
+   "star": null,
+   "t": 1794438323132
   },
   "https://jobright.ai/jobs/info/6af4d2f6cd7be4db20d88c4d": {
    "s": "skipped",
@@ -1407,11 +1407,6 @@
    "star": null,
    "t": 1795059253130
   },
-  "https://efds.fa.em5.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/74636": {
-   "s": "skipped",
-   "star": null,
-   "t": 1795150397489
-  },
   "https://kla.wd1.myworkdayjobs.com/Search/job/Austin-TX/Software-Application-Engineer-Intern_2643260-1": {
    "s": "done",
    "star": null,
@@ -1479,6 +1474,11 @@
    "t": 1795137539199,
    "at": 1795137539199
   },
+  "https://efds.fa.em5.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/74636": {
+   "s": "skipped",
+   "star": null,
+   "t": 1795150397489
+  },
   "https://hpe.wd5.myworkdayjobs.com/jobsathpe/job/Milpitas-California-United-States-of-America/HPE-Labs---Business-Analyst-Intern---AI-and-Data-Science_1217924": {
    "s": "skipped",
    "star": null,
@@ -1537,6 +1537,12 @@
    "s": "skipped",
    "star": null,
    "t": 1795218968385
+  },
+  "https://jobs.smartrecruiters.com/ServiceNow/744000162827365": {
+   "s": "done",
+   "star": null,
+   "t": 1795219197990,
+   "at": 1795219197990
   }
  },
  "blacklist": {
